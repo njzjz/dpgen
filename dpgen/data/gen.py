@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
-
-import os
-import re
-import sys
 import argparse
 import glob
 import json
-import random
 import logging
-import warnings
+import os
+import random
+import re
 import shutil
+import subprocess as sp
+import sys
 import time
+import warnings
+
 import dpdata
 import numpy as np
-from dpgen import dlog
-import subprocess as sp
-import dpgen.data.tools.hcp as hcp
-import dpgen.data.tools.fcc as fcc
+from pymatgen import Structure
+
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
+import dpgen.data.tools.fcc as fcc
+import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-from pymatgen import Structure
-from dpgen.remote.decide_machine import decide_fp_machine
+from dpgen import dlog
 from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher
+from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine
 
 
 def create_path(path):

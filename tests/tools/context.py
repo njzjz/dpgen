@@ -1,6 +1,7 @@
-from dpgen.tools.run_report import *
-import sys
 import os
+import sys
+
+from dpgen.tools.run_report import *
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 

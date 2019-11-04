@@ -1,8 +1,9 @@
-from .context import stat_sys
+import json
 import os
 import sys
-import json
 import unittest
+
+from .context import stat_sys
 
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(test_dir, ".."))

@@ -1,20 +1,28 @@
-from pymatgen.io.vasp import Potcar, Poscar, Incar, Kpoints
-from monty.serialization import loadfn, dumpfn
-from monty.shutil import remove
-from dpdata import System, LabeledSystem
-from .context import VaspInput, DPPotcar
-from .context import setUpModule
-from .context import parsing_vasp
-from .context import Entry
-from .context import dpgen
-import os
-import sys
-import shutil
-import unittest
 import json
-import numpy as np
+import os
+import shutil
+import sys
 import tarfile
+import unittest
 from glob import glob
+
+import numpy as np
+from dpdata import LabeledSystem
+from dpdata import System
+from monty.serialization import dumpfn
+from monty.serialization import loadfn
+from monty.shutil import remove
+from pymatgen.io.vasp import Incar
+from pymatgen.io.vasp import Kpoints
+from pymatgen.io.vasp import Poscar
+from pymatgen.io.vasp import Potcar
+
+from .context import dpgen
+from .context import DPPotcar
+from .context import Entry
+from .context import parsing_vasp
+from .context import setUpModule
+from .context import VaspInput
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "database"

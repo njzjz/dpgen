@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-from dpgen.dispatcher.SSHContext import SSHSession
-from dpgen.dispatcher.SSHContext import SSHContext
-from dpgen.dispatcher.Slurm import Slurm
-from dpgen import dlog
-import os
 import json
+import os
+
 import numpy as np
+
+from dpgen import dlog
+from dpgen.dispatcher.Slurm import Slurm
+from dpgen.dispatcher.SSHContext import SSHContext
+from dpgen.dispatcher.SSHContext import SSHSession
 
 
 def decide_train_machine(mdata):

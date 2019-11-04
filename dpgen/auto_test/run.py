@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 init: crystal configuration
 task:
@@ -11,55 +10,57 @@ task:
         05.surf
         06.phonon
 """
-
-
-import sys
-import os
-import re
 import argparse
 import filecmp
-import json
 import glob
+import json
+import logging
+import os
+import random
+import re
+import shutil
+import subprocess as sp
+import sys
+import time
+import warnings
+from hashlib import sha1
+
+import numpy as np
+import requests
+
+import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.util as util
 import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
-import random
-import logging
-import warnings
-import shutil
-import time
-import numpy as np
-import subprocess as sp
-from dpgen.auto_test.lib.utils import make_iter_name
-from dpgen.auto_test.lib.utils import create_path
-from dpgen.auto_test.lib.utils import copy_file_list
-from dpgen.auto_test.lib.utils import replace
-
-from dpgen.auto_test.lib.utils import log_iter
-from dpgen.auto_test.lib.utils import record_iter
-from dpgen.auto_test.lib.utils import log_iter
+from dpgen.auto_test import cmpt_00_equi
+from dpgen.auto_test import cmpt_01_eos
+from dpgen.auto_test import cmpt_02_elastic
+from dpgen.auto_test import cmpt_03_vacancy
+from dpgen.auto_test import cmpt_04_interstitial
+from dpgen.auto_test import cmpt_05_surf
+from dpgen.auto_test import gen_00_equi
+from dpgen.auto_test import gen_01_eos
+from dpgen.auto_test import gen_02_elastic
+from dpgen.auto_test import gen_03_vacancy
+from dpgen.auto_test import gen_04_interstitial
+from dpgen.auto_test import gen_05_surf
+from dpgen.auto_test import gen_confs
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
 from dpgen.auto_test.lib.siesta import make_siesta_input
-from dpgen.remote.RemoteJob import (
-    SSHSession,
-    JobStatus,
-    SlurmJob,
-    PBSJob,
-    CloudMachineJob,
-)
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
+from dpgen.auto_test.lib.utils import copy_file_list
+from dpgen.auto_test.lib.utils import create_path
+from dpgen.auto_test.lib.utils import log_iter
+from dpgen.auto_test.lib.utils import make_iter_name
+from dpgen.auto_test.lib.utils import record_iter
+from dpgen.auto_test.lib.utils import replace
+from dpgen.remote.decide_machine import decide_fp_machine
+from dpgen.remote.decide_machine import decide_model_devi_machine
 from dpgen.remote.group_jobs import *
-from dpgen.auto_test import gen_00_equi, cmpt_00_equi
-from dpgen.auto_test import gen_01_eos, cmpt_01_eos
-from dpgen.auto_test import gen_02_elastic, cmpt_02_elastic
-from dpgen.auto_test import gen_03_vacancy, cmpt_03_vacancy
-from dpgen.auto_test import gen_04_interstitial, cmpt_04_interstitial
-from dpgen.auto_test import gen_05_surf, cmpt_05_surf
-
+from dpgen.remote.RemoteJob import CloudMachineJob
+from dpgen.remote.RemoteJob import JobStatus
+from dpgen.remote.RemoteJob import PBSJob
+from dpgen.remote.RemoteJob import SlurmJob
+from dpgen.remote.RemoteJob import SSHSession
 # from dpgen.auto_test import gen_06_phonon,cmpt_06_phonon
-from dpgen.auto_test import gen_confs
-import requests
-from hashlib import sha1
 
 lammps_task_type = ["deepmd", "meam", "eam"]
 

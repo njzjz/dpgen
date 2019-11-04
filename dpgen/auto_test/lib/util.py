@@ -1,11 +1,13 @@
-import numpy as np
-import requests
 import os
 import re
-from dpgen.remote.RemoteJob import SSHSession
-from dpgen.auto_test.lib import vasp
+
+import numpy as np
+import requests
+
 from dpgen.auto_test.lib import lammps
+from dpgen.auto_test.lib import vasp
 from dpgen.auto_test.lib.utils import cmd_append_log
+from dpgen.remote.RemoteJob import SSHSession
 
 lammps_task_type = ["deepmd", "meam", "eam"]
 

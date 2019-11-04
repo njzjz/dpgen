@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-
-import os
-import glob
 import argparse
+import glob
 import json
-import warnings
+import os
 import re
+import warnings
+
 import numpy as np
+
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.vasp as vasp
 

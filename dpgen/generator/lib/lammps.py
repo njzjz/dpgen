@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-
-import random
 import os
+import random
+import subprocess as sp
 import sys
+from distutils.version import LooseVersion
+
 import dpdata
 import numpy as np
-import subprocess as sp
 import scipy.constants as pc
-from distutils.version import LooseVersion
 
 
 def _sample_sphere():

@@ -1,11 +1,12 @@
-import os
 import getpass
+import os
 import time
 from datetime import datetime
 from itertools import zip_longest
+
+from dpgen import dlog
 from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
-from dpgen import dlog
 
 
 class AWS(Batch):

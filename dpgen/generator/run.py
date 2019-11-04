@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 init: data
 iter:
@@ -8,67 +7,68 @@ iter:
         02.vasp
         03.data
 """
-
-import os
-import sys
 import argparse
 import glob
 import json
-import random
-import logging
 import logging.handlers
+import os
 import queue
-import warnings
+import random
 import shutil
-import time
-import dpdata
-import numpy as np
 import subprocess as sp
-import scipy.constants as pc
+import sys
+import time
+import warnings
 from collections import Counter
 from distutils.version import LooseVersion
-from dpgen import dlog
-from dpgen import SHORT_CMD
-from dpgen.generator.lib.utils import make_iter_name
-from dpgen.generator.lib.utils import create_path
-from dpgen.generator.lib.utils import copy_file_list
-from dpgen.generator.lib.utils import replace
-from dpgen.generator.lib.utils import log_iter
-from dpgen.generator.lib.utils import record_iter
-from dpgen.generator.lib.utils import log_task
-from dpgen.generator.lib.lammps import make_lammps_input
-from dpgen.generator.lib.vasp import write_incar_dict
-from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
-from dpgen.generator.lib.vasp import incar_upper
-from dpgen.generator.lib.pwscf import make_pwscf_input
 
-# from dpgen.generator.lib.pwscf import cvt_1frame
-from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
-from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
-from dpgen.generator.lib.ele_temp import NBandsEsti
-from dpgen.remote.RemoteJob import (
-    SSHSession,
-    JobStatus,
-    SlurmJob,
-    PBSJob,
-    LSFJob,
-    CloudMachineJob,
-    awsMachineJob,
-)
-from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
-from dpgen.remote.group_jobs import group_slurm_jobs
-from dpgen.remote.group_jobs import group_local_jobs
-from dpgen.remote.decide_machine import (
-    decide_train_machine,
-    decide_fp_machine,
-    decide_model_devi_machine,
-)
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
-from dpgen.util import sepline
+import dpdata
+import numpy as np
+import scipy.constants as pc
+from pymatgen.io.vasp import Incar
+from pymatgen.io.vasp import Kpoints
+from pymatgen.io.vasp import Potcar
+
+from dpgen import dlog
 from dpgen import ROOT_PATH
-from pymatgen.io.vasp import Incar, Kpoints, Potcar
+from dpgen import SHORT_CMD
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from dpgen.dispatcher.Dispatcher import Dispatcher
+from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.generator.lib.cp2k import make_cp2k_input
+from dpgen.generator.lib.cp2k import make_cp2k_xyz
+from dpgen.generator.lib.ele_temp import NBandsEsti
+from dpgen.generator.lib.gaussian import make_gaussian_input
+from dpgen.generator.lib.gaussian import take_cluster
+from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.pwscf import make_pwscf_input
+from dpgen.generator.lib.siesta import make_siesta_input
+from dpgen.generator.lib.utils import copy_file_list
+from dpgen.generator.lib.utils import create_path
+from dpgen.generator.lib.utils import log_iter
+from dpgen.generator.lib.utils import log_task
+from dpgen.generator.lib.utils import make_iter_name
+from dpgen.generator.lib.utils import record_iter
+from dpgen.generator.lib.utils import replace
+from dpgen.generator.lib.vasp import incar_upper
+from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
+from dpgen.generator.lib.vasp import write_incar_dict
+from dpgen.remote.decide_machine import decide_fp_machine
+from dpgen.remote.decide_machine import decide_model_devi_machine
+from dpgen.remote.decide_machine import decide_train_machine
+from dpgen.remote.group_jobs import aws_submit_jobs
+from dpgen.remote.group_jobs import group_local_jobs
+from dpgen.remote.group_jobs import group_slurm_jobs
+from dpgen.remote.group_jobs import ucloud_submit_jobs
+from dpgen.remote.RemoteJob import awsMachineJob
+from dpgen.remote.RemoteJob import CloudMachineJob
+from dpgen.remote.RemoteJob import JobStatus
+from dpgen.remote.RemoteJob import LSFJob
+from dpgen.remote.RemoteJob import PBSJob
+from dpgen.remote.RemoteJob import SlurmJob
+from dpgen.remote.RemoteJob import SSHSession
+from dpgen.util import sepline
+# from dpgen.generator.lib.pwscf import cvt_1frame
 
 template_name = "template"
 train_name = "00.train"

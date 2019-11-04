@@ -1,22 +1,24 @@
 import os
+import random
 import sys
 import time
-import random
+from hashlib import sha1
 
-from dpgen.dispatcher.LocalContext import LocalSession
-from dpgen.dispatcher.LocalContext import LocalContext
+from monty.serialization import dumpfn
+from monty.serialization import loadfn
+
+from dpgen import dlog
+from dpgen.dispatcher.AWS import AWS
+from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
-from dpgen.dispatcher.SSHContext import SSHSession
-from dpgen.dispatcher.SSHContext import SSHContext
-from dpgen.dispatcher.Slurm import Slurm
+from dpgen.dispatcher.LocalContext import LocalContext
+from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LSF import LSF
 from dpgen.dispatcher.PBS import PBS
 from dpgen.dispatcher.Shell import Shell
-from dpgen.dispatcher.AWS import AWS
-from dpgen.dispatcher.JobStatus import JobStatus
-from dpgen import dlog
-from hashlib import sha1
-from monty.serialization import dumpfn, loadfn
+from dpgen.dispatcher.Slurm import Slurm
+from dpgen.dispatcher.SSHContext import SSHContext
+from dpgen.dispatcher.SSHContext import SSHSession
 
 
 def _split_tasks(tasks, group_size):

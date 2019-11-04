@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-
-import os
-import sys
-import json
-import glob
 import argparse
+import glob
+import json
+import os
 import shutil
-import numpy as np
 import subprocess as sp
+import sys
+
+import numpy as np
+
+from dpgen.tools.stat_iter import stat_iter
+from dpgen.tools.stat_iter import stat_time
 from dpgen.tools.stat_sys import stat_sys
-from dpgen.tools.stat_iter import stat_iter, stat_time
 
 
 def run_report(args):

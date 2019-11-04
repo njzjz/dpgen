@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
+import argparse
+import glob
+import json
+import os
+import shutil
+import subprocess as sp
+import sys
 
 import dpdata
-from dpgen.generator.run import make_vasp_incar
-from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.lib.pwscf import make_pwscf_input
-import os
-import sys
-import json
-import glob
-import argparse
-import shutil
 import numpy as np
-import subprocess as sp
+
+from dpgen.generator.lib.pwscf import make_pwscf_input
+from dpgen.generator.lib.siesta import make_siesta_input
+from dpgen.generator.run import make_vasp_incar
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 

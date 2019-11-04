@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from os import path
-from dpgen import NAME, SHORT_CMD
-import setuptools
 import datetime
+from os import path
+
+import setuptools
+
+from dpgen import NAME
+from dpgen import SHORT_CMD
 
 readme_file = path.join(path.dirname(path.abspath(__file__)), "README.md")
 try:

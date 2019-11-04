@@ -1,10 +1,12 @@
-from .context import NBandsEsti
+import importlib
 import os
 import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-import importlib
+
+from .context import NBandsEsti
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-
-import os
-import sys
 import json
+import os
 import subprocess
+import sys
 from collections import defaultdict
 
 import dpdata

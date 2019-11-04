@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-
-import os
-import re
 import argparse
 import filecmp
-import json
 import glob
-import sys
+import json
+import os
+import re
 import subprocess as sp
+import sys
+
 import numpy as np
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from pymatgen.analysis.elasticity.strain import Strain
 from pymatgen.analysis.elasticity.stress import Stress
+
+import dpgen.auto_test.lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
 
 global_equi_name = "00.equi"
 global_task_name = "03.vacancy"

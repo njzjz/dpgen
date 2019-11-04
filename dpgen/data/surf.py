@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
-
-import os
-import json
-import shutil
-import re
-import glob
 import argparse
-import numpy as np
+import glob
+import json
+import os
+import re
+import shutil
 import subprocess as sp
-import dpgen.data.tools.hcp as hcp
-import dpgen.data.tools.fcc as fcc
-import dpgen.data.tools.diamond as diamond
-import dpgen.data.tools.sc as sc
-import dpgen.data.tools.bcc as bcc
-from dpgen import dlog
 import time
-from dpgen import ROOT_PATH
-from dpgen.remote.decide_machine import decide_fp_machine
-from pymatgen.core.surface import SlabGenerator, generate_all_slabs, Structure
-from pymatgen.io.vasp import Poscar
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 
-# -----ASE-------
-from pymatgen.io.ase import AseAtomsAdaptor
-from ase.io import read
+import numpy as np
 from ase.build import general_surface
+from ase.io import read
+from pymatgen.core.surface import generate_all_slabs
+from pymatgen.core.surface import SlabGenerator
+from pymatgen.core.surface import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.io.vasp import Poscar
+
+import dpgen.data.tools.bcc as bcc
+import dpgen.data.tools.diamond as diamond
+import dpgen.data.tools.fcc as fcc
+import dpgen.data.tools.hcp as hcp
+import dpgen.data.tools.sc as sc
+from dpgen import dlog
+from dpgen import ROOT_PATH
+from dpgen.dispatcher.Dispatcher import Dispatcher
+from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine
+# -----ASE-------
 
 
 def create_path(path):

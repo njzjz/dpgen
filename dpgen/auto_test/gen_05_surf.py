@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-
-import os
-import re
 import argparse
 import filecmp
-import json
 import glob
+import json
+import os
+import re
 import subprocess as sp
+
 import numpy as np
-import dpgen.auto_test.lib.vasp as vasp
+from pymatgen.core.surface import generate_all_slabs
+from pymatgen.core.surface import Structure
+
 import dpgen.auto_test.lib.lammps as lammps
-from pymatgen.core.surface import generate_all_slabs, Structure
+import dpgen.auto_test.lib.vasp as vasp
 
 global_equi_name = "00.equi"
 global_task_name = "05.surf"

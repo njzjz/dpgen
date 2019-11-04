@@ -1,32 +1,35 @@
-from pymatgen.io.vasp import Kpoints, Incar
-import scipy.constants as pc
-from .comp_sys import test_cell
-from .comp_sys import test_coord
-from .comp_sys import test_atom_types
-from .comp_sys import test_atom_names
-from .context import setUpModule
-from .context import my_file_cmp
-from .context import make_kspacing_kpoints
-from .context import param_diy_file
-from .context import machine_file
-from .context import param_cp2k_file
-from .context import param_gaussian_file
-from .context import param_siesta_file
-from .context import param_pwscf_old_file
-from .context import param_pwscf_file
-from .context import param_old_file
-from .context import param_file
-from .context import parse_cur_job
-from .context import detect_multiplicity
-from .context import make_fp
-import os
-import sys
-import json
 import glob
+import json
+import os
 import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
+import scipy.constants as pc
+from pymatgen.io.vasp import Incar
+from pymatgen.io.vasp import Kpoints
+
+from .comp_sys import test_atom_names
+from .comp_sys import test_atom_types
+from .comp_sys import test_cell
+from .comp_sys import test_coord
+from .context import detect_multiplicity
+from .context import machine_file
+from .context import make_fp
+from .context import make_kspacing_kpoints
+from .context import my_file_cmp
+from .context import param_cp2k_file
+from .context import param_diy_file
+from .context import param_file
+from .context import param_gaussian_file
+from .context import param_old_file
+from .context import param_pwscf_file
+from .context import param_pwscf_old_file
+from .context import param_siesta_file
+from .context import parse_cur_job
+from .context import setUpModule
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"

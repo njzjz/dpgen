@@ -1,7 +1,8 @@
 #!/usr/bin/python3
-
 import warnings
+
 import numpy as np
+
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.util as util
 

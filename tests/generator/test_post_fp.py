@@ -1,31 +1,33 @@
-from .comp_sys import CompLabeledSys
-from .comp_sys import test_cell
-from .comp_sys import test_coord
-from .comp_sys import test_atom_types
-from .comp_sys import test_atom_names
-from .context import setUpModule
-from .context import machine_file
-from .context import param_cp2k_file
-from .context import param_gaussian_file
-from .context import param_siesta_file
-from .context import param_pwscf_old_file
-from .context import param_pwscf_file
-from .context import param_old_file
-from .context import param_file
-from .context import post_fp_cp2k
-from .context import post_fp_gaussian
-from .context import post_fp_vasp
-from .context import post_fp_siesta
-from .context import post_fp_pwscf
-from .context import post_fp
-import os
-import sys
-import json
 import glob
+import json
+import os
 import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
+
+from .comp_sys import CompLabeledSys
+from .comp_sys import test_atom_names
+from .comp_sys import test_atom_types
+from .comp_sys import test_cell
+from .comp_sys import test_coord
+from .context import machine_file
+from .context import param_cp2k_file
+from .context import param_file
+from .context import param_gaussian_file
+from .context import param_old_file
+from .context import param_pwscf_file
+from .context import param_pwscf_old_file
+from .context import param_siesta_file
+from .context import post_fp
+from .context import post_fp_cp2k
+from .context import post_fp_gaussian
+from .context import post_fp_pwscf
+from .context import post_fp_siesta
+from .context import post_fp_vasp
+from .context import setUpModule
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"

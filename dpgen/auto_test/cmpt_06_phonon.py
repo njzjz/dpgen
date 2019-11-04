@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-
-import os
-import re
 import argparse
 import filecmp
-import json
 import glob
+import json
+import os
+import re
 import subprocess as sp
+
 import numpy as np
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
+import phonopy
+import yaml
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 
-import yaml
-import phonopy
+import dpgen.auto_test.lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
 
 
 global_equi_name = "00.equi"

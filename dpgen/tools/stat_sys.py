@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
+import argparse
+import glob
+import json
+import os
+import shutil
+import subprocess as sp
+import sys
+
+import numpy as np
 
 from dpgen.tools.relabel import get_lmp_info
-import os
-import sys
-import json
-import glob
-import argparse
-import shutil
-import numpy as np
-import subprocess as sp
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 

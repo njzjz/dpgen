@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-
-import random
 import os
-import sys
-import dpdata
+import random
 import subprocess as sp
+import sys
+
+import dpdata
+
 import dpgen.auto_test.lib.util as util
 
 
