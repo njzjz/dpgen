@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os
+import re
+import argparse
+import filecmp
+import json
+import glob
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -12,8 +17,6 @@ import yaml
 import phonopy
 
 
-
-
 global_equi_name = '00.equi'
 global_task_name = '06.phonon'
 
@@ -23,38 +26,41 @@ link potcar
 make incar
 '''
 
+
 def get_force_from_dump(cell):
-    na=len(cell)
-    with open("dump.relax","r") as fp:
+    na = len(cell)
+    with open("dump.relax", "r") as fp:
         lines = fp.readlines()
-        flag=False
-        index=[]
-        forces=[]
+        flag = False
+        index = []
+        forces = []
         for line in lines:
             if flag:
-                data=line.split()
+                data = line.split()
                 index.append(data[0])
                 forces.append(data[5:9])
-            if len(forces)==na:
+            if len(forces) == na:
                 break
             if 'fx fy fz' in line:
-                flag=True
+                flag = True
         index = np.asarray(index, int)
         indexing = np.argsort(index)
-        if len(forces)==na:
-            forces=np.asarray(np.reshape(forces,(na,3)),float)[indexing, :]
+        if len(forces) == na:
+            forces = np.asarray(np.reshape(forces, (na, 3)), float)[
+                indexing, :]
         else:
             raise RuntimeError('Incomplete result: dump.relax')
     return forces
 
-def cmpt_vasp(jdata, conf_dir) :
+
+def cmpt_vasp(jdata, conf_dir):
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
-    supercell_matrix=jdata['supercell_matrix']
+    supercell_matrix = jdata['supercell_matrix']
     if 'relax_incar' in jdata.keys():
-        vasp_str='vasp-relax_incar'
+        vasp_str = 'vasp-relax_incar'
     else:
-        vasp_str='vasp-k%.2f' % kspacing
+        vasp_str = 'vasp-k%.2f' % kspacing
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
@@ -64,7 +70,8 @@ def cmpt_vasp(jdata, conf_dir) :
     if os.path.isfile('vasprun.xml'):
         os.system('phonopy --fc vasprun.xml')
         if os.path.isfile('FORCE_CONSTANTS'):
-            os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+            os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf' %
+                      (supercell_matrix[0], supercell_matrix[1], supercell_matrix[2]))
             os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
             print('band.dat is created')
         else:
@@ -72,10 +79,9 @@ def cmpt_vasp(jdata, conf_dir) :
     else:
         print('vasprun.xml No such file')
 
-    
-    
-def cmpt_lammps(jdata, conf_dir, task_type) :
-    supercell_matrix=jdata['supercell_matrix']
+
+def cmpt_lammps(jdata, conf_dir, task_type):
+    supercell_matrix = jdata['supercell_matrix']
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
@@ -84,13 +90,14 @@ def cmpt_lammps(jdata, conf_dir, task_type) :
 
     os.chdir(task_path)
     if os.path.isfile('FORCE_CONSTANTS'):
-        os.system('phonopy --dim="%d %d %d" -c POSCAR band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+        os.system('phonopy --dim="%d %d %d" -c POSCAR band.conf' %
+                  (supercell_matrix[0], supercell_matrix[1], supercell_matrix[2]))
         os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
     else:
         print('FORCE_CONSTANTS No such file')
 
 
-def _main() :
+def _main():
     parser = argparse.ArgumentParser(
         description="cmpt 06.phonon")
     parser.add_argument('TASK', type=str,
@@ -101,17 +108,17 @@ def _main() :
                         help='the path to conf')
     args = parser.parse_args()
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    with open(args.PARAM, 'r') as fp:
+        jdata = json.load(fp)
 
 #    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF)               
-    elif args.TASK == 'deepmd' or args.TASK =='meam' :
-        cmpt_lammps(jdata, args.CONF,args.TASK)
-    else :
+        cmpt_vasp(jdata, args.CONF)
+    elif args.TASK == 'deepmd' or args.TASK == 'meam':
+        cmpt_lammps(jdata, args.CONF, args.TASK)
+    else:
         raise RuntimeError("unknow task ", args.TASK)
-    
-if __name__ == '__main__' :
-    _main()
 
+
+if __name__ == '__main__':
+    _main()

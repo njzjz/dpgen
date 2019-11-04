@@ -1,9 +1,11 @@
-import sys,os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from dpgen.generator.run import *
-from dpgen.generator.lib.gaussian import detect_multiplicity
 from dpgen.generator.lib.ele_temp import NBandsEsti
+from dpgen.generator.lib.gaussian import detect_multiplicity
+from dpgen.generator.run import *
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..')))
 
 param_file = 'param-mg-vasp.json'
 param_file_v1 = 'param-mg-vasp-v1.json'
@@ -18,10 +20,12 @@ machine_file = 'machine-local.json'
 machine_file_v1 = 'machine-local-v1.json'
 param_diy_file = 'param-mg-vasp-diy.json'
 
+
 def my_file_cmp(test, f0, f1):
-    with open(f0) as fp0 :
+    with open(f0) as fp0:
         with open(f1) as fp1:
             test.assertTrue(fp0.read() == fp1.read())
+
 
 def setUpModule():
     os.chdir(os.path.abspath(os.path.dirname(__file__)))

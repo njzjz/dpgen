@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from os import path
-from  dpgen import NAME,SHORT_CMD
-import setuptools, datetime
+from dpgen import NAME, SHORT_CMD
+import setuptools
+import datetime
 
 readme_file = path.join(path.dirname(path.abspath(__file__)), 'README.md')
 try:
@@ -14,10 +15,11 @@ except ImportError:
         readme = f.read()
 
 today = datetime.date.today().strftime("%b-%d-%Y")
-with open(path.join('dpgen', '_date.py'), 'w') as fp :
+with open(path.join('dpgen', '_date.py'), 'w') as fp:
     fp.write('date = \'%s\'' % today)
 
-install_requires=['numpy>=1.14.3', 'dpdata>=0.1.10', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
+install_requires = ['numpy>=1.14.3', 'dpdata>=0.1.10',
+                    'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
@@ -30,7 +32,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/deepmodeling/dpgen",
     python_requires="~=3.6",
-    packages=['dpgen', 
+    packages=['dpgen',
               'dpgen/generator',
               'dpgen/generator/lib',
               'dpgen/auto_test',
@@ -41,18 +43,17 @@ setuptools.setup(
               'dpgen/dispatcher',
               'dpgen/database',
               'dpgen/tools'
-    ],
-    data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
+              ],
+    data_files=[('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
     # package_data={'example':['*.json']},
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
     keywords='deep potential generator active learning deepmd-kit',
-    install_requires=install_requires,    
-        entry_points={
-          'console_scripts': [
-              SHORT_CMD+'= dpgen.main:main']
-   }
+    install_requires=install_requires,
+    entry_points={
+        'console_scripts': [
+            SHORT_CMD+'= dpgen.main:main']
+    }
 )
-

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob, sys
+import os
+import re
+import argparse
+import filecmp
+import json
+import glob
+import sys
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -13,12 +19,13 @@ from pymatgen.analysis.elasticity.stress import Stress
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
-def result_et(et,conf_dir,result):
-    with open(result,'w') as fp:
-        fp.write('conf_dir:%s\n'% (conf_dir))
-        for ii in range(6) :
-            for jj in range(6) :
-                fp.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
+
+def result_et(et, conf_dir, result):
+    with open(result, 'w') as fp:
+        fp.write('conf_dir:%s\n' % (conf_dir))
+        for ii in range(6):
+            for jj in range(6):
+                fp.write("%7.2f " % (et.voigt[ii][jj] / 1e4))
             fp.write('\n')
         BV = et.k_voigt / 1e4
         GV = et.g_voigt / 1e4
@@ -31,10 +38,10 @@ def result_et(et,conf_dir,result):
     fp.close()
 
 
-def print_et (et):
-    for ii in range(6) :
-        for jj in range(6) :
-            sys.stdout.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
+def print_et(et):
+    for ii in range(6):
+        for jj in range(6):
+            sys.stdout.write("%7.2f " % (et.voigt[ii][jj] / 1e4))
         sys.stdout.write('\n')
     BV = et.k_voigt / 1e4
     GV = et.g_voigt / 1e4
@@ -45,73 +52,77 @@ def print_et (et):
     print("# Youngs Modulus EV = %.2f GPa" % (EV))
     print("# Poission Ratio uV = %.2f " % (uV))
 
-def cmpt_vasp(jdata, conf_dir) :
+
+def cmpt_vasp(jdata, conf_dir):
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
     if 'relax_incar' in jdata.keys():
-        vasp_str='vasp-relax_incar'
+        vasp_str = 'vasp-relax_incar'
     else:
         fp_params = jdata['vasp_params']
         kspacing = fp_params['kspacing']
-        vasp_str='vasp-k%.2f' % kspacing
+        vasp_str = 'vasp-k%.2f' % kspacing
     task_path = os.path.join(task_path, vasp_str)
 
-    equi_stress = Stress(np.loadtxt(os.path.join(task_path, 'equi.stress.out')))
+    equi_stress = Stress(np.loadtxt(
+        os.path.join(task_path, 'equi.stress.out')))
 
     lst_dfm_path = glob.glob(os.path.join(task_path, 'dfm-*'))
     lst_strain = []
     lst_stress = []
-    for ii in lst_dfm_path :
+    for ii in lst_dfm_path:
         strain = np.loadtxt(os.path.join(ii, 'strain.out'))
         stress = vasp.get_stress(os.path.join(ii, 'OUTCAR'))
         # convert from pressure in kB to stress
         stress *= -1000
         lst_strain.append(Strain(strain))
         lst_stress.append(Stress(stress))
-    et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = equi_stress, vasp = False)
+    et = ElasticTensor.from_independent_strains(
+        lst_strain, lst_stress, eq_stress=equi_stress, vasp=False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4
     print_et(et)
-    result = os.path.join(task_path,'result')
-    result_et(et,conf_dir,result)
+    result = os.path.join(task_path, 'result')
+    result_et(et, conf_dir, result)
     if 'upload_username' in jdata.keys():
-        upload_username=jdata['upload_username']
-        util.insert_data('elastic','vasp',upload_username,result)
+        upload_username = jdata['upload_username']
+        util.insert_data('elastic', 'vasp', upload_username, result)
 
 
-def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
+def cmpt_deepmd_lammps(jdata, conf_dir, task_name):
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, task_name)
-    equi_stress = Stress(np.loadtxt(os.path.join(task_path, 'equi.stress.out')))
+    equi_stress = Stress(np.loadtxt(
+        os.path.join(task_path, 'equi.stress.out')))
 
     lst_dfm_path = glob.glob(os.path.join(task_path, 'dfm-*'))
     lst_strain = []
     lst_stress = []
-    for ii in lst_dfm_path :
+    for ii in lst_dfm_path:
         strain = np.loadtxt(os.path.join(ii, 'strain.out'))
         stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
         # convert from pressure to stress
         stress = -stress
         lst_strain.append(Strain(strain))
         lst_stress.append(Stress(stress))
-    et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = equi_stress, vasp = False)
+    et = ElasticTensor.from_independent_strains(
+        lst_strain, lst_stress, eq_stress=equi_stress, vasp=False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4
     print_et(et)
-    result = os.path.join(task_path,'result')
-    result_et(et,conf_dir,task_path)
-    if 'upload_username' in jdata.keys() and task_name=='deepmd':
-        upload_username=jdata['upload_username']
-        util.insert_data('elastic','deepmd',upload_username,result)
+    result = os.path.join(task_path, 'result')
+    result_et(et, conf_dir, task_path)
+    if 'upload_username' in jdata.keys() and task_name == 'deepmd':
+        upload_username = jdata['upload_username']
+        util.insert_data('elastic', 'deepmd', upload_username, result)
 
 
-
-def _main() :
+def _main():
     parser = argparse.ArgumentParser(
         description="cmpt 02.elastic")
     parser.add_argument('TASK', type=str,
@@ -122,18 +133,19 @@ def _main() :
                         help='the path to conf')
     args = parser.parse_args()
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    with open(args.PARAM, 'r') as fp:
+        jdata = json.load(fp)
 
     print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF)
-    elif args.TASK == 'deepmd' :
+    elif args.TASK == 'deepmd':
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
-    elif args.TASK == 'meam' :
+    elif args.TASK == 'meam':
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
-    else :
+    else:
         raise RuntimeError("unknow task ", args.TASK)
 
-if __name__ == '__main__' :
+
+if __name__ == '__main__':
     _main()
