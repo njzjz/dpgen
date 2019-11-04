@@ -15,16 +15,15 @@ import shutil
 import numpy as np
 import unittest
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
-__package__ = 'generator'
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+__package__ = "generator"
 
 
 def _comp_sys_files(sys0, sys1):
     pwd = os.getcwd()
     os.chdir(sys0)
-    files = glob.glob('*.raw')
-    set_files = glob.glob('set.*/*npy')
+    files = glob.glob("*.raw")
+    set_files = glob.glob("set.*/*npy")
     # files += set_files
     os.chdir(pwd)
     for ii in files:
@@ -35,7 +34,7 @@ def _comp_sys_files(sys0, sys1):
     for ii in set_files:
         t0 = np.load(os.path.join(sys0, ii))
         t1 = np.load(os.path.join(sys1, ii))
-        if np.linalg.norm(t0-t1) > 1e-12:
+        if np.linalg.norm(t0 - t1) > 1e-12:
             return False
     return True
 
@@ -43,240 +42,275 @@ def _comp_sys_files(sys0, sys1):
 def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
     for ii in init_data_sys:
         sys0 = os.path.join(init_data_prefix, ii)
-        sys1 = os.path.join('iter.%06d' % iter_idx,
-                            '00.train',
-                            'data.init',
-                            ii)
-        testCase.assertTrue(_comp_sys_files(sys0, sys1),
-                            'systems %s %s are not identical' % (sys0, sys1))
+        sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init", ii)
+        testCase.assertTrue(
+            _comp_sys_files(sys0, sys1),
+            "systems %s %s are not identical" % (sys0, sys1),
+        )
 
 
 def _check_numb_models(testCase, iter_idx, numb_models):
-    models = glob.glob(os.path.join('iter.%06d' % iter_idx,
-                                    '00.train',
-                                    '[0-9][0-9][0-9]'))
+    models = glob.glob(
+        os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")
+    )
     testCase.assertTrue(len(models), numb_models)
 
 
 def _check_model_inputs(testCase, iter_idx, jdata):
-    train_param = jdata.get('train_param', 'input.json')
-    numb_models = jdata['numb_models']
-    default_training_param = jdata['default_training_param']
-    init_data_sys = [os.path.join('..', 'data.init', ii)
-                     for ii in jdata['init_data_sys']]
-    init_batch_size = jdata['init_batch_size']
-    sys_batch_size = jdata['sys_batch_size']
+    train_param = jdata.get("train_param", "input.json")
+    numb_models = jdata["numb_models"]
+    default_training_param = jdata["default_training_param"]
+    init_data_sys = [
+        os.path.join("..", "data.init", ii) for ii in jdata["init_data_sys"]
+    ]
+    init_batch_size = jdata["init_batch_size"]
+    sys_batch_size = jdata["sys_batch_size"]
     if iter_idx > 0:
-        systems = glob.glob(os.path.join('iter.*', '02.fp', 'data.*'))
+        systems = glob.glob(os.path.join("iter.*", "02.fp", "data.*"))
         for ii in systems:
-            init_data_sys.append(os.path.join('..', 'data.iters', ii))
-            sys_idx = int(os.path.basename(ii).split('.')[1])
+            init_data_sys.append(os.path.join("..", "data.iters", ii))
+            sys_idx = int(os.path.basename(ii).split(".")[1])
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
-        with open(os.path.join('iter.%06d' % iter_idx,
-                               '00.train',
-                               '%03d' % kk,
-                               train_param)) as fp:
+        with open(
+            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
+        ) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
         for ii in jdata0.keys():
-            if ii == 'systems':
+            if ii == "systems":
                 for jj, kk in zip(jdata0[ii], init_data_sys):
                     testCase.assertEqual(jj, kk)
-            elif ii == 'batch_size':
+            elif ii == "batch_size":
                 for jj, kk in zip(jdata0[ii], init_batch_size):
                     testCase.assertEqual(jj, kk)
-            elif ii == 'seed':
+            elif ii == "seed":
                 pass
             else:
                 testCase.assertEqual(jdata0[ii], default_training_param[ii])
 
 
-def _check_model_input_dict(testCase, input_dict, init_data_sys, init_batch_size, default_training_param):
+def _check_model_input_dict(
+    testCase, input_dict, init_data_sys, init_batch_size, default_training_param
+):
     for ii in input_dict.keys():
-        if ii == 'systems':
+        if ii == "systems":
             for jj, kk in zip(input_dict[ii], init_data_sys):
                 testCase.assertEqual(jj, kk)
-        elif ii == 'batch_size':
+        elif ii == "batch_size":
             for jj, kk in zip(input_dict[ii], init_batch_size):
                 testCase.assertEqual(jj, kk)
-        elif ii == 'seed':
+        elif ii == "seed":
             # can be anything
             pass
-        elif ii == 'numb_fparam':
+        elif ii == "numb_fparam":
             testCase.assertEqual(input_dict[ii], 1)
-        elif ii == 'numb_aparam':
+        elif ii == "numb_aparam":
             testCase.assertEqual(input_dict[ii], 1)
         else:
             testCase.assertEqual(input_dict[ii], default_training_param[ii])
 
 
 def _check_model_inputs_v1(testCase, iter_idx, jdata):
-    train_param = jdata.get('train_param', 'input.json')
-    numb_models = jdata['numb_models']
-    use_ele_temp = jdata.get('use_ele_temp', 0)
-    default_training_param = jdata['default_training_param']
-    init_data_sys = [os.path.join('..', 'data.init', ii)
-                     for ii in jdata['init_data_sys']]
-    init_batch_size = jdata['init_batch_size']
-    sys_batch_size = jdata['sys_batch_size']
+    train_param = jdata.get("train_param", "input.json")
+    numb_models = jdata["numb_models"]
+    use_ele_temp = jdata.get("use_ele_temp", 0)
+    default_training_param = jdata["default_training_param"]
+    init_data_sys = [
+        os.path.join("..", "data.init", ii) for ii in jdata["init_data_sys"]
+    ]
+    init_batch_size = jdata["init_batch_size"]
+    sys_batch_size = jdata["sys_batch_size"]
     if iter_idx > 0:
-        systems = glob.glob(os.path.join('iter.*', '02.fp', 'data.*'))
+        systems = glob.glob(os.path.join("iter.*", "02.fp", "data.*"))
         for ii in systems:
-            init_data_sys.append(os.path.join('..', 'data.iters', ii))
-            sys_idx = int(os.path.basename(ii).split('.')[1])
+            init_data_sys.append(os.path.join("..", "data.iters", ii))
+            sys_idx = int(os.path.basename(ii).split(".")[1])
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
-        with open(os.path.join('iter.%06d' % iter_idx,
-                               '00.train',
-                               '%03d' % kk,
-                               train_param)) as fp:
+        with open(
+            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
+        ) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
         if use_ele_temp == 1:
-            testCase.assertTrue(
-                'numb_fparam' in jdata0['model']['fitting_net'])
-            testCase.assertFalse(
-                'numb_aparam' in jdata0['model']['fitting_net'])
+            testCase.assertTrue("numb_fparam" in jdata0["model"]["fitting_net"])
+            testCase.assertFalse("numb_aparam" in jdata0["model"]["fitting_net"])
         if use_ele_temp == 2:
-            testCase.assertTrue(
-                'numb_aparam' in jdata0['model']['fitting_net'])
-            testCase.assertFalse(
-                'numb_fparam' in jdata0['model']['fitting_net'])
-        _check_model_input_dict(testCase, jdata0['model']['descriptor'], init_data_sys,
-                                init_batch_size, default_training_param['model']['descriptor'])
-        _check_model_input_dict(testCase, jdata0['model']['fitting_net'], init_data_sys,
-                                init_batch_size, default_training_param['model']['fitting_net'])
+            testCase.assertTrue("numb_aparam" in jdata0["model"]["fitting_net"])
+            testCase.assertFalse("numb_fparam" in jdata0["model"]["fitting_net"])
         _check_model_input_dict(
-            testCase, jdata0['loss'], init_data_sys, init_batch_size, default_training_param['loss'])
+            testCase,
+            jdata0["model"]["descriptor"],
+            init_data_sys,
+            init_batch_size,
+            default_training_param["model"]["descriptor"],
+        )
         _check_model_input_dict(
-            testCase, jdata0['learning_rate'], init_data_sys, init_batch_size, default_training_param['learning_rate'])
+            testCase,
+            jdata0["model"]["fitting_net"],
+            init_data_sys,
+            init_batch_size,
+            default_training_param["model"]["fitting_net"],
+        )
         _check_model_input_dict(
-            testCase, jdata0['training'], init_data_sys, init_batch_size, default_training_param['training'])
+            testCase,
+            jdata0["loss"],
+            init_data_sys,
+            init_batch_size,
+            default_training_param["loss"],
+        )
+        _check_model_input_dict(
+            testCase,
+            jdata0["learning_rate"],
+            init_data_sys,
+            init_batch_size,
+            default_training_param["learning_rate"],
+        )
+        _check_model_input_dict(
+            testCase,
+            jdata0["training"],
+            init_data_sys,
+            init_batch_size,
+            default_training_param["training"],
+        )
 
 
 def _make_fake_fp(iter_idx, sys_idx, nframes):
     for ii in range(nframes):
-        dirname = os.path.join('iter.%06d' % iter_idx,
-                               '02.fp',
-                               'task.%03d.%06d' % (sys_idx, ii))
+        dirname = os.path.join(
+            "iter.%06d" % iter_idx, "02.fp", "task.%03d.%06d" % (sys_idx, ii)
+        )
         os.makedirs(dirname, exist_ok=True)
-    dirname = os.path.join('iter.%06d' % iter_idx,
-                           '02.fp',
-                           'data.%03d' % sys_idx)
+    dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)
     os.makedirs(dirname, exist_ok=True)
-    box_str = ['0' for ii in range(9)]
-    box_str = ' '.join(box_str)
-    with open(os.path.join(dirname, 'box.raw'), 'w') as fp:
+    box_str = ["0" for ii in range(9)]
+    box_str = " ".join(box_str)
+    with open(os.path.join(dirname, "box.raw"), "w") as fp:
         for ii in range(nframes):
-            fp.write(box_str + '\n')
+            fp.write(box_str + "\n")
 
 
 def _check_pb_link(testCase, iter_idx, numb_models):
     pwd = os.getcwd()
-    os.chdir(os.path.join('iter.%06d' % iter_idx,
-                          '00.train'))
+    os.chdir(os.path.join("iter.%06d" % iter_idx, "00.train"))
     for ii in range(numb_models):
-        lnk = os.readlink('graph.%03d.pb' % ii)
-        testCase.assertEqual(lnk, os.path.join('%03d' % ii, 'frozen_model.pb'))
+        lnk = os.readlink("graph.%03d.pb" % ii)
+        testCase.assertEqual(lnk, os.path.join("%03d" % ii, "frozen_model.pb"))
     os.chdir(pwd)
 
 
 class TestMakeTrain(unittest.TestCase):
     def test_0(self):
-        with open(param_file, 'r') as fp:
+        with open(param_file, "r") as fp:
             jdata = json.load(fp)
-        with open(machine_file, 'r') as fp:
+        with open(machine_file, "r") as fp:
             mdata = json.load(fp)
-        fp_task_min = jdata['fp_task_min']
+        fp_task_min = jdata["fp_task_min"]
         make_train(0, jdata, mdata)
         # comp init data
-        init_data_prefix = jdata['init_data_prefix']
-        init_data_sys = jdata['init_data_sys']
+        init_data_prefix = jdata["init_data_prefix"]
+        init_data_sys = jdata["init_data_sys"]
         _comp_init_data(self, 0, init_data_prefix, init_data_sys)
         # check number of models
-        _check_numb_models(self, 0, jdata['numb_models'])
+        _check_numb_models(self, 0, jdata["numb_models"])
         # check models inputs
         _check_model_inputs(self, 0, jdata)
         # remove iter
-        shutil.rmtree('iter.000000')
+        shutil.rmtree("iter.000000")
 
     def test_1_data(self):
-        with open(param_file, 'r') as fp:
+        with open(param_file, "r") as fp:
             jdata = json.load(fp)
-        with open(machine_file, 'r') as fp:
+        with open(machine_file, "r") as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
-        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        _make_fake_fp(0, 0, jdata["fp_task_min"])
         # make iter1 train
         make_train(1, jdata, mdata)
         # check data is linked
-        self.assertTrue(os.path.isdir(os.path.join(
-            'iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        self.assertTrue(
+            os.path.isdir(
+                os.path.join(
+                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
+                )
+            )
+        )
         # check models inputs
         _check_model_inputs(self, 1, jdata)
         # remove testing dirs
-        shutil.rmtree('iter.000001')
-        shutil.rmtree('iter.000000')
+        shutil.rmtree("iter.000001")
+        shutil.rmtree("iter.000000")
 
     def test_1_skip(self):
-        with open(param_file, 'r') as fp:
+        with open(param_file, "r") as fp:
             jdata = json.load(fp)
-        with open(machine_file, 'r') as fp:
+        with open(machine_file, "r") as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min - 1
-        _make_fake_fp(0, 0, jdata['fp_task_min'] - 1)
+        _make_fake_fp(0, 0, jdata["fp_task_min"] - 1)
         # make iter1 train
         make_train(1, jdata, mdata)
-        self.assertTrue(os.path.isfile(os.path.join(
-            'iter.000001', '00.train', 'copied')))
+        self.assertTrue(
+            os.path.isfile(os.path.join("iter.000001", "00.train", "copied"))
+        )
         # check pb file linked
-        _check_pb_link(self, 1, jdata['numb_models'])
+        _check_pb_link(self, 1, jdata["numb_models"])
         # remove testing dirs
-        shutil.rmtree('iter.000001')
-        shutil.rmtree('iter.000000')
+        shutil.rmtree("iter.000001")
+        shutil.rmtree("iter.000000")
 
     def test_1_data_v1(self):
-        with open(param_file_v1, 'r') as fp:
+        with open(param_file_v1, "r") as fp:
             jdata = json.load(fp)
-            jdata.pop('use_ele_temp', None)
-        with open(machine_file_v1, 'r') as fp:
+            jdata.pop("use_ele_temp", None)
+        with open(machine_file_v1, "r") as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
-        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        _make_fake_fp(0, 0, jdata["fp_task_min"])
         # make iter1 train
         make_train(1, jdata, mdata)
         # check data is linked
-        self.assertTrue(os.path.isdir(os.path.join(
-            'iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        self.assertTrue(
+            os.path.isdir(
+                os.path.join(
+                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
+                )
+            )
+        )
         # check models inputs
         _check_model_inputs_v1(self, 1, jdata)
         # remove testing dirs
-        shutil.rmtree('iter.000001')
-        shutil.rmtree('iter.000000')
+        shutil.rmtree("iter.000001")
+        shutil.rmtree("iter.000000")
 
     def test_1_data_v1_eletron_temp(self):
-        with open(param_file_v1_et, 'r') as fp:
+        with open(param_file_v1_et, "r") as fp:
             jdata = json.load(fp)
-        with open(machine_file_v1, 'r') as fp:
+        with open(machine_file_v1, "r") as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
-        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        _make_fake_fp(0, 0, jdata["fp_task_min"])
         # make iter1 train
         make_train(1, jdata, mdata)
         # check data is linked
-        self.assertTrue(os.path.isdir(os.path.join(
-            'iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        self.assertTrue(
+            os.path.isdir(
+                os.path.join(
+                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
+                )
+            )
+        )
         # check models inputs
         _check_model_inputs_v1(self, 1, jdata)
         # remove testing dirs
-        shutil.rmtree('iter.000001')
-        shutil.rmtree('iter.000000')
+        shutil.rmtree("iter.000001")
+        shutil.rmtree("iter.000000")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,7 @@ from dpgen.tools.run_report import *
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
 def my_file_cmp(test, f0, f1):

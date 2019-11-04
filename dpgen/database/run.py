@@ -17,8 +17,8 @@ from monty.serialization import loadfn, dumpfn
 import numpy as np
 import traceback
 
-OUTPUT = SHORT_CMD+'_db.json'
-SUPPORTED_CACULATOR = ['vasp', 'pwscf', 'gaussian']
+OUTPUT = SHORT_CMD + "_db.json"
+SUPPORTED_CACULATOR = ["vasp", "pwscf", "gaussian"]
 ITERS_PAT = "iter.*/02.fp/task*"
 INIT_PAT = "init/*/02.md/sys-*/scale-*/*"
 
@@ -44,10 +44,10 @@ def _main(param):
         skip_init = jdata["skip_init"]
     # The mapping from sys_info to sys_configs
     assert calculator.lower() in SUPPORTED_CACULATOR
-    dlog.info('data collection from: %s' % path)
+    dlog.info("data collection from: %s" % path)
     if calculator == "vasp":
         parsing_vasp(path, config_info_dict, skip_init, output, id_prefix)
-    elif calculator == 'gaussian':
+    elif calculator == "gaussian":
         parsing_gaussian(path, output)
     else:
         parsing_pwscf(path, output)
@@ -67,8 +67,7 @@ def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=Non
         dlog.info("len collected data: %s" % len(entries))
     else:
         dlog.info("len initialization data: %s" % len(f_fp_init))
-        entries = _parsing_vasp(
-            f_fp_init, config_info_dict, id_prefix, iters=False)
+        entries = _parsing_vasp(f_fp_init, config_info_dict, id_prefix, iters=False)
         entries.extend(_parsing_vasp(f_fp_iters, config_info_dict, id_prefix))
         dlog.info("len collected data: %s" % len(entries))
     # print(output)
@@ -92,9 +91,9 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
             pass
     for path in paths:
         try:
-            f_outcar = os.path.join(path, 'OUTCAR')
-            f_job = os.path.join(path, 'job.json')
-            tmp_iter = path.split('/')[-3]
+            f_outcar = os.path.join(path, "OUTCAR")
+            f_job = os.path.join(path, "job.json")
+            tmp_iter = path.split("/")[-3]
             if (tmp_iter in iter_record) and (tmp_iter != iter_record[-1]):
                 continue
             if tmp_iter not in iter_record_new:
@@ -107,20 +106,20 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
 
             if iters and attrib:
                 # generator/Cu/iter.000031/02.fp/task.007.000000
-                tmp_ = path.split('/')[-1]
+                tmp_ = path.split("/")[-1]
                 # config_info=tmp_.split('.')[1]
-                task_info = tmp_.split('.')[-1]
-                tmp_iter = path.split('/')[-3]
-                iter_info = tmp_iter.split('.')[-1]
-                sys_info = path.split('/')[-4]
-                config_info_int = int(tmp_.split('.')[1])
+                task_info = tmp_.split(".")[-1]
+                tmp_iter = path.split("/")[-3]
+                iter_info = tmp_iter.split(".")[-1]
+                sys_info = path.split("/")[-4]
+                config_info_int = int(tmp_.split(".")[1])
                 for (key, value) in config_info_dict.items():
                     if config_info_int in value:
                         config_info = key
-                attrib['config_info'] = config_info
-                attrib['task_info'] = task_info
-                attrib['iter_info'] = iter_info
-                attrib['sys_info'] = sys_info
+                attrib["config_info"] = config_info
+                attrib["task_info"] = task_info
+                attrib["iter_info"] = iter_info
+                attrib["sys_info"] = sys_info
                 with open(f_outcar, "r") as fin_outcar:
                     infile_outcar = fin_outcar.readlines()
                 for line in infile_outcar:
@@ -133,16 +132,17 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
                         attrib["clocktime"] = line.split()[-1]
                 dlog.info("Attrib")
                 dlog.info(attrib)
-            comp = vi['POSCAR'].structure.composition
+            comp = vi["POSCAR"].structure.composition
             ls = LabeledSystem(f_outcar)
             lss = ls.to_list()
             for ls in lss:
                 if id_prefix:
-                    eid = id_prefix+"_"+str(icount)
+                    eid = id_prefix + "_" + str(icount)
                 else:
                     eid = str(uuid4())
-            entry = Entry(comp, 'vasp', vi.as_dict(),
-                          ls.as_dict(), attribute=attrib, entry_id=eid)
+            entry = Entry(
+                comp, "vasp", vi.as_dict(), ls.as_dict(), attribute=attrib, entry_id=eid
+            )
             entries.append(entry)
             icount += 1
         except Exception:

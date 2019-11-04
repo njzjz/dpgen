@@ -25,6 +25,6 @@ def run_report(args):
         stat_time(args.JOB_DIR, args.param, args.verbose)
         report_count += 1
     if report_count == 0:
-        print('nothing to report, rerun with -h for help')
+        print("nothing to report, rerun with -h for help")
 
     return report_count
