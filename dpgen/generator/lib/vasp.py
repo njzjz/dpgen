@@ -6,15 +6,15 @@ from pymatgen.io.vasp import Incar
 
 
 def _make_vasp_incar_dict(
-    ecut,
-    ediff,
-    npar,
-    kpar,
-    kspacing=0.5,
-    kgamma=True,
-    smearing=None,
-    sigma=None,
-    metagga=None,
+        ecut,
+        ediff,
+        npar,
+        kpar,
+        kspacing=0.5,
+        kgamma=True,
+        smearing=None,
+        sigma=None,
+        metagga=None,
 ):
     incar_dict = {}
     incar_dict["PREC"] = "A"
@@ -91,7 +91,8 @@ def _make_smearing(fp_params):
     elif smearing_method == "fd":
         return -1, sigma
     else:
-        raise RuntimeError("unsuppported smearing method %s " % smearing_method)
+        raise RuntimeError("unsuppported smearing method %s " %
+                           smearing_method)
 
 
 def _make_metagga(fp_params):

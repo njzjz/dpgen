@@ -56,7 +56,11 @@ def _main(param):
         parsing_pwscf(path, output)
 
 
-def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=None):
+def parsing_vasp(path,
+                 config_info_dict,
+                 skip_init,
+                 output=OUTPUT,
+                 id_prefix=None):
 
     fp_iters = os.path.join(path, ITERS_PAT)
     dlog.debug(fp_iters)
@@ -70,7 +74,10 @@ def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=Non
         dlog.info("len collected data: %s" % len(entries))
     else:
         dlog.info("len initialization data: %s" % len(f_fp_init))
-        entries = _parsing_vasp(f_fp_init, config_info_dict, id_prefix, iters=False)
+        entries = _parsing_vasp(f_fp_init,
+                                config_info_dict,
+                                id_prefix,
+                                iters=False)
         entries.extend(_parsing_vasp(f_fp_iters, config_info_dict, id_prefix))
         dlog.info("len collected data: %s" % len(entries))
     # print(output)
@@ -143,9 +150,12 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
                     eid = id_prefix + "_" + str(icount)
                 else:
                     eid = str(uuid4())
-            entry = Entry(
-                comp, "vasp", vi.as_dict(), ls.as_dict(), attribute=attrib, entry_id=eid
-            )
+            entry = Entry(comp,
+                          "vasp",
+                          vi.as_dict(),
+                          ls.as_dict(),
+                          attribute=attrib,
+                          entry_id=eid)
             entries.append(entry)
             icount += 1
         except Exception:

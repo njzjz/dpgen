@@ -12,7 +12,10 @@ import scipy.constants as pc
 
 def _sample_sphere():
     while True:
-        vv = np.array([np.random.normal(), np.random.normal(), np.random.normal()])
+        vv = np.array(
+            [np.random.normal(),
+             np.random.normal(),
+             np.random.normal()])
         vn = np.linalg.norm(vv)
         if vn < 0.2:
             continue
@@ -20,28 +23,27 @@ def _sample_sphere():
 
 
 def make_lammps_input(
-    ensemble,
-    conf_file,
-    graphs,
-    nsteps,
-    dt,
-    neidelay,
-    trj_freq,
-    mass_map,
-    temp,
-    jdata,
-    tau_t=0.1,
-    pres=None,
-    tau_p=0.5,
-    pka_e=None,
-    ele_temp_f=None,
-    ele_temp_a=None,
-    max_seed=1000000,
-    deepmd_version="0.1",
+        ensemble,
+        conf_file,
+        graphs,
+        nsteps,
+        dt,
+        neidelay,
+        trj_freq,
+        mass_map,
+        temp,
+        jdata,
+        tau_t=0.1,
+        pres=None,
+        tau_p=0.5,
+        pka_e=None,
+        ele_temp_f=None,
+        ele_temp_a=None,
+        max_seed=1000000,
+        deepmd_version="0.1",
 ):
-    if (ele_temp_f is not None or ele_temp_a is not None) and LooseVersion(
-        deepmd_version
-    ) < LooseVersion("1"):
+    if (ele_temp_f is not None or ele_temp_a is not None
+        ) and LooseVersion(deepmd_version) < LooseVersion("1"):
         raise RuntimeError(
             "the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit"
         )
@@ -94,8 +96,7 @@ def make_lammps_input(
             keywords += "aparam ${ELE_TEMP}"
         ret += (
             "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n"
-            % (graph_list, keywords)
-        )
+            % (graph_list, keywords))
     ret += "pair_coeff      \n"
     ret += "\n"
     ret += "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
@@ -104,17 +105,14 @@ def make_lammps_input(
     ret += "\n"
     if pka_e is None:
         ret += "velocity        all create ${TEMP} %d" % (
-            random.randrange(max_seed - 1) + 1
-        )
+            random.randrange(max_seed - 1) + 1)
     else:
         sys = dpdata.System(conf_file, fmt="lammps/lmp")
         sys_data = sys.data
         pka_mass = mass_map[sys_data["atom_types"][0] - 1]
-        pka_vn = (
-            pka_e
-            * pc.electron_volt
-            / (0.5 * pka_mass * 1e-3 / pc.Avogadro * (pc.angstrom / pc.pico) ** 2)
-        )
+        pka_vn = (pka_e * pc.electron_volt /
+                  (0.5 * pka_mass * 1e-3 / pc.Avogadro *
+                   (pc.angstrom / pc.pico)**2))
         pka_vn = np.sqrt(pka_vn)
         print(pka_vn)
         pka_vec = _sample_sphere()

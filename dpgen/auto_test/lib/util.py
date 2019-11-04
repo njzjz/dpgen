@@ -31,8 +31,7 @@ def insert_data(task, task_type, username, file_name):
     assert task_type in ["vasp", "deepmd"]
     url = (
         "http://115.27.161.2:5000/insert_test_data?username=%s&expr_type=%s&data_type=%s"
-        % (username, task_type, task)
-    )
+        % (username, task_type, task))
     res = requests.post(url, data=open(file_name).read())
     print("Successful upload!")
 

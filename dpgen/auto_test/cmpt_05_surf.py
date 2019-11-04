@@ -66,12 +66,10 @@ def cmpt_vasp(jdata, conf_dir, static=False):
             AA = np.linalg.norm(np.cross(boxes[0][0], boxes[0][1]))
             Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-            sys.stdout.write(
-                "%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa)
-            )
-            fp.write(
-                "%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa)
-            )
+            sys.stdout.write("%s:\t %7.3f   %8.3f %8.3f\n" %
+                             (structure_dir, evac, epa, equi_epa))
+            fp.write("%s:\t %7.3f   %8.3f %8.3f\n" %
+                     (structure_dir, evac, epa, equi_epa))
     fp.close()
     if "upload_username" in jdata.keys():
         upload_username = jdata["upload_username"]
@@ -106,12 +104,10 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static=False):
             AA = lammps.get_base_area(lmp_log)
             Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-            sys.stdout.write(
-                "%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa)
-            )
-            fp.write(
-                "%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa)
-            )
+            sys.stdout.write("%s: \t%7.3f    %8.3f %8.3f\n" %
+                             (structure_dir, evac, epa, equi_epa))
+            fp.write("%s:\t %7.3f   %8.3f %8.3f\n" %
+                     (structure_dir, evac, epa, equi_epa))
     fp.close()
     if "upload_username" in jdata.keys() and task_name == "deepm":
         upload_username = jdata["upload_username"]
@@ -120,7 +116,9 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static=False):
 
 def _main():
     parser = argparse.ArgumentParser(description="cmpt 05.surf")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
     args = parser.parse_args()

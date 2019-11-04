@@ -66,17 +66,17 @@ lammps_task_type = ["deepmd", "meam", "eam"]
 
 
 def _run(
-    machine,
-    machine_type,
-    ssh_sess,
-    resources,
-    command,
-    work_path,
-    run_tasks,
-    group_size,
-    common_files,
-    forward_files,
-    backward_files,
+        machine,
+        machine_type,
+        ssh_sess,
+        resources,
+        command,
+        work_path,
+        run_tasks,
+        group_size,
+        common_files,
+        forward_files,
+        backward_files,
 ):
 
     print("group_size", group_size)
@@ -192,8 +192,7 @@ def run_equi(task_type, jdata, mdata):
     run_tasks = util.collect_task(all_task, task_type)
 
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
 
     _run(
         machine,
@@ -283,8 +282,7 @@ def run_eos(task_type, jdata, mdata):
     run_tasks = util.collect_task(all_task, task_type)
 
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
     _run(
         machine,
         machine_type,
@@ -365,8 +363,7 @@ def run_elastic(task_type, jdata, mdata):
 
     run_tasks = util.collect_task(all_task, task_type)
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
     _run(
         machine,
         machine_type,
@@ -446,8 +443,7 @@ def run_vacancy(task_type, jdata, mdata):
 
     run_tasks = util.collect_task(all_task, task_type)
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
     _run(
         machine,
         machine_type,
@@ -471,7 +467,8 @@ def cmpt_vacancy(task_type, jdata, mdata):
         cmpt_03_vacancy.cmpt_vasp(jdata, conf_dir, supercell)
     # lammps
     elif task_type in lammps_task_type:
-        cmpt_03_vacancy.cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_type)
+        cmpt_03_vacancy.cmpt_deepmd_lammps(jdata, conf_dir, supercell,
+                                           task_type)
     else:
         raise RuntimeError("unknow task ", task_type)
 
@@ -488,13 +485,11 @@ def gen_interstitial(task_type, jdata, mdata):
     # lammps
     elif task_type in lammps_task_type:
         if not reprod_opt:
-            gen_04_interstitial.make_lammps(
-                jdata, conf_dir, supercell, insert_ele, task_type
-            )
+            gen_04_interstitial.make_lammps(jdata, conf_dir, supercell,
+                                            insert_ele, task_type)
         else:
-            gen_04_interstitial.make_reprod_traj(
-                jdata, conf_dir, supercell, insert_ele, task_type
-            )
+            gen_04_interstitial.make_reprod_traj(jdata, conf_dir, supercell,
+                                                 insert_ele, task_type)
     else:
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -503,7 +498,8 @@ def gen_interstitial(task_type, jdata, mdata):
 def run_interstitial(task_type, jdata, mdata):
 
     reprod_opt = jdata["reprod-opt"]
-    work_path = util.make_work_path(jdata, "04.interstitial", reprod_opt, False, False)
+    work_path = util.make_work_path(jdata, "04.interstitial", reprod_opt,
+                                    False, False)
     all_task = glob.glob(os.path.join(work_path, "struct-*"))
 
     # vasp
@@ -554,8 +550,7 @@ def run_interstitial(task_type, jdata, mdata):
         raise RuntimeError("unknow task %s, something wrong" % task_type)
 
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
 
     if reprod_opt:
         for ii in work_path:
@@ -605,14 +600,12 @@ def cmpt_interstitial(task_type, jdata, mdata):
     # lammps
     elif task_type in lammps_task_type:
         if not reprod_opt:
-            cmpt_04_interstitial.cmpt_deepmd_lammps(
-                jdata, conf_dir, supercell, insert_ele, task_type
-            )
+            cmpt_04_interstitial.cmpt_deepmd_lammps(jdata, conf_dir, supercell,
+                                                    insert_ele, task_type)
         else:
             task_name = task_type + "-reprod"
             cmpt_04_interstitial.cmpt_deepmd_reprod_traj(
-                jdata, conf_dir, supercell, insert_ele, task_name
-            )
+                jdata, conf_dir, supercell, insert_ele, task_name)
     else:
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -626,9 +619,11 @@ def gen_surf(task_type, jdata, mdata):
     cwd = os.getcwd()
     # vasp
     if task_type == "vasp":
-        gen_05_surf.make_vasp(
-            jdata, conf_dir, max_miller, static=static, relax_box=relax_box
-        )
+        gen_05_surf.make_vasp(jdata,
+                              conf_dir,
+                              max_miller,
+                              static=static,
+                              relax_box=relax_box)
     # lammps
     elif task_type in lammps_task_type:
         gen_05_surf.make_lammps(
@@ -683,8 +678,7 @@ def run_surf(task_type, jdata, mdata):
 
     run_tasks = util.collect_task(all_task, task_type)
     machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-        mdata, task_type
-    )
+        mdata, task_type)
     _run(
         machine,
         machine_type,
@@ -713,7 +707,10 @@ def cmpt_surf(task_type, jdata, mdata):
             task_name = task_type + "-static"
         else:
             task_name = task_type
-        cmpt_05_surf.cmpt_deepmd_lammps(jdata, conf_dir, task_name, static=static_opt)
+        cmpt_05_surf.cmpt_deepmd_lammps(jdata,
+                                        conf_dir,
+                                        task_name,
+                                        static=static_opt)
     else:
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -743,8 +740,7 @@ def run_phonon(task_type, jdata, mdata):
     if task_type == "vasp":
         mdata = decide_fp_machine(mdata)
         machine, machine_type, ssh_sess, resources, command, group_size = util.get_machine_info(
-            mdata, task_type
-        )
+            mdata, task_type)
 
         run_tasks = util.collect_task(all_task, task_type)
         forward_files = ["INCAR", "POTCAR", "KPOINTS"]
@@ -884,10 +880,13 @@ def gen_test(args):
 
 def _main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("PARAM", type=str, help="The parameters of the generator")
+    parser.add_argument("PARAM",
+                        type=str,
+                        help="The parameters of the generator")
     parser.add_argument(
-        "MACHINE", type=str, help="The settings of the machine running the generator"
-    )
+        "MACHINE",
+        type=str,
+        help="The settings of the machine running the generator")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")

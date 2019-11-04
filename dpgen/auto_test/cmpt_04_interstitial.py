@@ -45,13 +45,13 @@ def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele):
 
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_path_widecard = os.path.join(
-        task_path, "struct-%s-%s-*" % (insert_ele, copy_str)
-    )
+        task_path, "struct-%s-%s-*" % (insert_ele, copy_str))
     print(struct_path_widecard)
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
     if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+        print("# cannot find results for conf %s supercell %s" %
+              (conf_dir, supercell))
     sys.stdout.write("Insert_ele-Struct: Inter_E(eV)\n")
     for ii in struct_path_list:
         structure_dir = os.path.basename(ii)
@@ -66,7 +66,8 @@ def cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name):
         _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, ii, task_name)
 
 
-def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name):
+def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele,
+                             task_name):
     if "relax_incar" in jdata.keys():
         vasp_str = "vasp-relax_incar"
     else:
@@ -76,9 +77,11 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name):
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub("confs", global_task_name, conf_path)
     vasp_path = os.path.join(task_path, vasp_str)
-    lmps_path = os.path.join(task_path, task_name + vasp_str.replace("vasp", ""))
+    lmps_path = os.path.join(task_path,
+                             task_name + vasp_str.replace("vasp", ""))
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
-    struct_widecard = os.path.join(vasp_path, "struct-%s-%s-*" % (insert_ele, copy_str))
+    struct_widecard = os.path.join(vasp_path,
+                                   "struct-%s-%s-*" % (insert_ele, copy_str))
     vasp_struct = glob.glob(struct_widecard)
     vasp_struct.sort()
     cwd = os.getcwd()
@@ -131,13 +134,13 @@ def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name):
 
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_path_widecard = os.path.join(
-        task_path, "struct-%s-%s-*" % (insert_ele, copy_str)
-    )
+        task_path, "struct-%s-%s-*" % (insert_ele, copy_str))
     struct_path_list = glob.glob(struct_path_widecard)
     print(struct_path_widecard)
     struct_path_list.sort()
     if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+        print("# cannot find results for conf %s supercell %s" %
+              (conf_dir, supercell))
     sys.stdout.write("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list:
         structure_dir = os.path.basename(ii)
@@ -145,18 +148,22 @@ def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name):
         natoms, epa, vpa = lammps.get_nev(lmp_log)
         evac = epa * natoms - equi_epa * natoms
         sys.stdout.write(
-            "%s: %7.3f  %7.3f %7.3f \n"
-            % (structure_dir, evac, epa * natoms, equi_epa * natoms)
-        )
+            "%s: %7.3f  %7.3f %7.3f \n" %
+            (structure_dir, evac, epa * natoms, equi_epa * natoms))
 
 
 def _main():
     parser = argparse.ArgumentParser(description="cmpt 04.interstitial")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
     parser.add_argument("COPY", type=int, nargs=3, help="define the supercell")
-    parser.add_argument("ELEMENT", type=str, nargs="+", help="the inserted element")
+    parser.add_argument("ELEMENT",
+                        type=str,
+                        nargs="+",
+                        help="the inserted element")
     args = parser.parse_args()
 
     with open(args.PARAM, "r") as fp:
@@ -166,13 +173,17 @@ def _main():
     if args.TASK == "vasp":
         cmpt_vasp(jdata, args.CONF, args.COPY, args.ELEMENT)
     elif args.TASK == "deepmd":
-        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT,
+                           args.TASK)
     elif args.TASK == "deepmd-reprod":
-        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT,
+                                args.TASK)
     elif args.TASK == "meam":
-        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT,
+                           args.TASK)
     elif args.TASK == "meam-reprod":
-        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT,
+                                args.TASK)
     else:
         raise RuntimeError("unknow task ", args.TASK)
 

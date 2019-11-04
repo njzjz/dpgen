@@ -225,7 +225,8 @@ def make_super_cell_poscar(jdata):
     path_sc = os.path.join(out_dir, global_dirname_02)
     create_path(path_sc)
     from_poscar_path = jdata["from_poscar_path"]
-    assert os.path.isfile(from_poscar_path), "file %s should exists" % from_poscar_path
+    assert os.path.isfile(
+        from_poscar_path), "file %s should exists" % from_poscar_path
 
     from_file = os.path.join(path_sc, "POSCAR.copied")
     shutil.copy2(from_poscar_path, from_file)
@@ -362,7 +363,8 @@ def make_scale(jdata):
                 assert os.path.isfile(pos_src)
             else:
                 try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+                    pos_src = os.path.join(os.path.join(init_path, ii),
+                                           "CONTCAR")
                     assert os.path.isfile(pos_src)
                 except:
                     raise RuntimeError(
@@ -397,12 +399,9 @@ def pert_scaled(jdata):
     pert_cmd = os.path.dirname(__file__)
     pert_cmd = os.path.join(pert_cmd, "tools")
     pert_cmd = os.path.join(pert_cmd, "create_random_disturb.py")
-    pert_cmd = (
-        "python3 "
-        + pert_cmd
-        + " -etmax %f -ofmt vasp POSCAR %d %f > /dev/null"
-        % (pert_box, pert_numb, pert_atom)
-    )
+    pert_cmd = ("python3 " + pert_cmd +
+                " -etmax %f -ofmt vasp POSCAR %d %f > /dev/null" %
+                (pert_box, pert_numb, pert_atom))
     for ii in sys_pe:
         for jj in scale:
             path_work = path_sp
@@ -517,14 +516,13 @@ def coll_vasp_md(jdata):
                     else:
                         dlog.info(
                             "WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"
-                            % (os.getcwd())
-                        )
+                            % (os.getcwd()))
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
                 "MD dir: %s: find no valid outcar in sys %s, "
-                "check if your vasp md simulation is correctly done" % (path_md, ii)
-            )
+                "check if your vasp md simulation is correctly done" %
+                (path_md, ii))
 
         flag = True
         if ("type_map" in jdata) and isinstance(jdata["type_map"], list):
@@ -656,7 +654,8 @@ def gen_init_bulk(args):
         import ruamel
         from monty.serialization import loadfn, dumpfn
 
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+        warnings.simplefilter("ignore",
+                              ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
@@ -750,9 +749,10 @@ def gen_init_bulk(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generating initial data for bulk systems."
-    )
-    parser.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
+        description="Generating initial data for bulk systems.")
+    parser.add_argument("PARAM",
+                        type=str,
+                        help="parameter file, json/yaml format")
     parser.add_argument(
         "MACHINE",
         type=str,

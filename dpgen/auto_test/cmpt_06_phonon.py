@@ -16,10 +16,8 @@ from phonopy.structure.atoms import PhonopyAtoms
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.vasp as vasp
 
-
 global_equi_name = "00.equi"
 global_task_name = "06.phonon"
-
 """
 link poscar
 link potcar
@@ -46,7 +44,8 @@ def get_force_from_dump(cell):
         index = np.asarray(index, int)
         indexing = np.argsort(index)
         if len(forces) == na:
-            forces = np.asarray(np.reshape(forces, (na, 3)), float)[indexing, :]
+            forces = np.asarray(np.reshape(forces, (na, 3)),
+                                float)[indexing, :]
         else:
             raise RuntimeError("Incomplete result: dump.relax")
     return forces
@@ -69,10 +68,9 @@ def cmpt_vasp(jdata, conf_dir):
     if os.path.isfile("vasprun.xml"):
         os.system("phonopy --fc vasprun.xml")
         if os.path.isfile("FORCE_CONSTANTS"):
-            os.system(
-                'phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'
-                % (supercell_matrix[0], supercell_matrix[1], supercell_matrix[2])
-            )
+            os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf' %
+                      (supercell_matrix[0], supercell_matrix[1],
+                       supercell_matrix[2]))
             os.system("phonopy-bandplot --gnuplot band.yaml > band.dat")
             print("band.dat is created")
         else:
@@ -92,9 +90,8 @@ def cmpt_lammps(jdata, conf_dir, task_type):
     os.chdir(task_path)
     if os.path.isfile("FORCE_CONSTANTS"):
         os.system(
-            'phonopy --dim="%d %d %d" -c POSCAR band.conf'
-            % (supercell_matrix[0], supercell_matrix[1], supercell_matrix[2])
-        )
+            'phonopy --dim="%d %d %d" -c POSCAR band.conf' %
+            (supercell_matrix[0], supercell_matrix[1], supercell_matrix[2]))
         os.system("phonopy-bandplot --gnuplot band.yaml > band.dat")
     else:
         print("FORCE_CONSTANTS No such file")
@@ -102,7 +99,9 @@ def cmpt_lammps(jdata, conf_dir, task_type):
 
 def _main():
     parser = argparse.ArgumentParser(description="cmpt 06.phonon")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
     args = parser.parse_args()

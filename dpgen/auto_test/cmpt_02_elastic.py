@@ -66,7 +66,8 @@ def cmpt_vasp(jdata, conf_dir):
         vasp_str = "vasp-k%.2f" % kspacing
     task_path = os.path.join(task_path, vasp_str)
 
-    equi_stress = Stress(np.loadtxt(os.path.join(task_path, "equi.stress.out")))
+    equi_stress = Stress(np.loadtxt(os.path.join(task_path,
+                                                 "equi.stress.out")))
 
     lst_dfm_path = glob.glob(os.path.join(task_path, "dfm-*"))
     lst_strain = []
@@ -78,9 +79,10 @@ def cmpt_vasp(jdata, conf_dir):
         stress *= -1000
         lst_strain.append(Strain(strain))
         lst_stress.append(Stress(stress))
-    et = ElasticTensor.from_independent_strains(
-        lst_strain, lst_stress, eq_stress=equi_stress, vasp=False
-    )
+    et = ElasticTensor.from_independent_strains(lst_strain,
+                                                lst_stress,
+                                                eq_stress=equi_stress,
+                                                vasp=False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4
@@ -97,7 +99,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name):
     conf_poscar = os.path.join(conf_path, "POSCAR")
     task_path = re.sub("confs", global_task_name, conf_path)
     task_path = os.path.join(task_path, task_name)
-    equi_stress = Stress(np.loadtxt(os.path.join(task_path, "equi.stress.out")))
+    equi_stress = Stress(np.loadtxt(os.path.join(task_path,
+                                                 "equi.stress.out")))
 
     lst_dfm_path = glob.glob(os.path.join(task_path, "dfm-*"))
     lst_strain = []
@@ -109,9 +112,10 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name):
         stress = -stress
         lst_strain.append(Strain(strain))
         lst_stress.append(Stress(stress))
-    et = ElasticTensor.from_independent_strains(
-        lst_strain, lst_stress, eq_stress=equi_stress, vasp=False
-    )
+    et = ElasticTensor.from_independent_strains(lst_strain,
+                                                lst_stress,
+                                                eq_stress=equi_stress,
+                                                vasp=False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4
@@ -125,7 +129,9 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name):
 
 def _main():
     parser = argparse.ArgumentParser(description="cmpt 02.elastic")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
     args = parser.parse_args()

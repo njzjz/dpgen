@@ -34,8 +34,7 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
     equi_path = os.path.abspath(equi_path)
     equi_contcar = os.path.join(equi_path, "CONTCAR")
     assert os.path.exists(
-        equi_contcar
-    ), "Please compute the equilibrium state using vasp first"
+        equi_contcar), "Please compute the equilibrium state using vasp first"
     task_path = re.sub("confs", global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
     if static:
@@ -58,7 +57,8 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
     # gen strcture
     ss = Structure.from_file(task_poscar)
     # gen slabs
-    all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
+    all_slabs = generate_all_slabs(ss, max_miller, min_slab_size,
+                                   min_vacuum_size)
     # gen incar
     if static:
         if "scf_incar" in jdata.keys():
@@ -77,9 +77,12 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
             min_slab_size = jdata["min_slab_size"]
             min_vacuum_size = jdata["min_vacuum_size"]
             pert_xz = jdata["pert_xz"]
-            fc = vasp.make_vasp_static_incar(
-                ecut, ediff, npar=npar, kpar=kpar, kspacing=kspacing, kgamma=kgamma
-            )
+            fc = vasp.make_vasp_static_incar(ecut,
+                                             ediff,
+                                             npar=npar,
+                                             kpar=kpar,
+                                             kspacing=kspacing,
+                                             kgamma=kgamma)
     else:
         if "relax_incar" in jdata.keys():
             relax_incar_path = jdata["relax_incar"]
@@ -117,9 +120,8 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
     potcar_map = jdata["potcar_map"]
     potcar_list = []
     for ii in ele_list:
-        assert os.path.exists(
-            os.path.abspath(potcar_map[ii])
-        ), "No POTCAR in the potcar_map of %s" % (ii)
+        assert os.path.exists(os.path.abspath(
+            potcar_map[ii])), "No POTCAR in the potcar_map of %s" % (ii)
         potcar_list.append(os.path.abspath(potcar_map[ii]))
     with open(os.path.join(task_path, "POTCAR"), "w") as outfile:
         for fname in potcar_list:
@@ -135,13 +137,15 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
             slab.miller_index[2],
         )
         # make dir
-        struct_path = os.path.join(task_path, "struct-%03d-%s" % (ii, miller_str))
+        struct_path = os.path.join(task_path,
+                                   "struct-%03d-%s" % (ii, miller_str))
         os.makedirs(struct_path, exist_ok=True)
         os.chdir(struct_path)
         for jj in ["POSCAR", "POTCAR", "INCAR"]:
             if os.path.isfile(jj):
                 os.remove(jj)
-        print("# %03d generate " % ii, struct_path, " \t %d atoms" % len(slab.sites))
+        print("# %03d generate " % ii, struct_path,
+              " \t %d atoms" % len(slab.sites))
         # make conf
         slab.to("POSCAR", "POSCAR.tmp")
         vasp.regulate_poscar("POSCAR.tmp", "POSCAR")
@@ -151,13 +155,17 @@ def make_vasp(jdata, conf_dir, max_miller=2, relax_box=False, static=False):
         np.savetxt("miller.out", slab.miller_index, fmt="%d")
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, "INCAR")), "INCAR")
-        os.symlink(os.path.relpath(os.path.join(task_path, "POTCAR")), "POTCAR")
+        os.symlink(os.path.relpath(os.path.join(task_path, "POTCAR")),
+                   "POTCAR")
     cwd = os.getcwd()
 
 
-def make_lammps(
-    jdata, conf_dir, max_miller=2, static=False, relax_box=False, task_type="wrong-task"
-):
+def make_lammps(jdata,
+                conf_dir,
+                max_miller=2,
+                static=False,
+                relax_box=False,
+                task_type="wrong-task"):
     kspacing = jdata["vasp_params"]["kspacing"]
     fp_params = jdata["lammps_params"]
     model_dir = fp_params["model_dir"]
@@ -194,8 +202,7 @@ def make_lammps(
     equi_path = os.path.abspath(equi_path)
     equi_contcar = os.path.join(equi_path, "CONTCAR")
     assert os.path.exists(
-        equi_contcar
-    ), "Please compute the equilibrium state using vasp first"
+        equi_contcar), "Please compute the equilibrium state using vasp first"
     task_path = re.sub("confs", global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
     if static:
@@ -213,13 +220,13 @@ def make_lammps(
     # gen strcture
     ss = Structure.from_file(task_poscar)
     # gen slabs
-    all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
+    all_slabs = generate_all_slabs(ss, max_miller, min_slab_size,
+                                   min_vacuum_size)
     # make lammps.in
     if task_type == "deepmd":
         if static:
-            fc = lammps.make_lammps_eval(
-                "conf.lmp", ntypes, lammps.inter_deepmd, model_name
-            )
+            fc = lammps.make_lammps_eval("conf.lmp", ntypes,
+                                         lammps.inter_deepmd, model_name)
         else:
             fc = lammps.make_lammps_equi(
                 "conf.lmp",
@@ -230,13 +237,14 @@ def make_lammps(
             )
     elif task_type == "meam":
         if static:
-            fc = lammps.make_lammps_eval(
-                "conf.lmp", ntypes, lammps.inter_meam, model_param
-            )
+            fc = lammps.make_lammps_eval("conf.lmp", ntypes, lammps.inter_meam,
+                                         model_param)
         else:
-            fc = lammps.make_lammps_equi(
-                "conf.lmp", ntypes, lammps.inter_meam, model_param, change_box=relax_box
-            )
+            fc = lammps.make_lammps_equi("conf.lmp",
+                                         ntypes,
+                                         lammps.inter_meam,
+                                         model_param,
+                                         change_box=relax_box)
     f_lammps_in = os.path.join(task_path, "lammps.in")
     with open(f_lammps_in, "w") as fp:
         fp.write(fc)
@@ -258,13 +266,15 @@ def make_lammps(
             slab.miller_index[2],
         )
         # make dir
-        struct_path = os.path.join(task_path, "struct-%03d-%s" % (ii, miller_str))
+        struct_path = os.path.join(task_path,
+                                   "struct-%03d-%s" % (ii, miller_str))
         os.makedirs(struct_path, exist_ok=True)
         os.chdir(struct_path)
         for jj in ["conf.lmp", "lammps.in"] + model_name:
             if os.path.isfile(jj):
                 os.remove(jj)
-        print("# %03d generate " % ii, struct_path, " \t %d atoms" % len(slab.sites))
+        print("# %03d generate " % ii, struct_path,
+              " \t %d atoms" % len(slab.sites))
         # make conf
         slab.to("POSCAR", "POSCAR")
         vasp.regulate_poscar("POSCAR", "POSCAR")
@@ -283,10 +293,14 @@ def make_lammps(
 
 def _main():
     parser = argparse.ArgumentParser(description="gen 05.surf")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
-    parser.add_argument("MAX_MILLER", type=int, help="the maximum miller index")
+    parser.add_argument("MAX_MILLER",
+                        type=int,
+                        help="the maximum miller index")
     parser.add_argument(
         "-r",
         "--relax-box",
@@ -300,13 +314,17 @@ def _main():
 
     print("# generate %s task with conf %s" % (args.TASK, args.CONF))
     if args.TASK == "vasp":
-        make_vasp(
-            jdata, args.CONF, args.MAX_MILLER, static=False, relax_box=args.relax_box
-        )
+        make_vasp(jdata,
+                  args.CONF,
+                  args.MAX_MILLER,
+                  static=False,
+                  relax_box=args.relax_box)
     elif args.TASK == "vasp-static":
-        make_vasp(
-            jdata, args.CONF, args.MAX_MILLER, static=True, relax_box=args.relax_box
-        )
+        make_vasp(jdata,
+                  args.CONF,
+                  args.MAX_MILLER,
+                  static=True,
+                  relax_box=args.relax_box)
     elif args.TASK == "deepmd" or args.TASK == "meam":
         make_lammps(
             jdata,

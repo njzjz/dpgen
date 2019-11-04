@@ -40,7 +40,7 @@ def regulate_poscar(poscar_in, poscar_out):
     for nn, cc in zip(names, counts):
         uniq_count[uniq_name.index(nn)] += cc
     natoms = np.sum(uniq_count)
-    posis = lines[8 : 8 + natoms]
+    posis = lines[8:8 + natoms]
     all_lines = []
     for ele in uniq_name:
         ele_lines = []
@@ -68,7 +68,7 @@ def sort_poscar(poscar_in, poscar_out, new_names):
     for nn, cc in zip(names, counts):
         new_counts[new_names.index(nn)] += cc
     natoms = np.sum(new_counts)
-    posis = lines[8 : 8 + natoms]
+    posis = lines[8:8 + natoms]
     all_lines = []
     for ele in new_names:
         ele_lines = []
@@ -119,9 +119,8 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma):
     box = np.array(box)
     box *= scale
     rbox = reciprocal_box(box)
-    kpoints = [
-        (np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int)) for ii in rbox
-    ]
+    kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int))
+               for ii in rbox]
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret
 
@@ -259,9 +258,14 @@ def _compute_isif(relax_ions, relax_shape, relax_volume):
     return isif
 
 
-def make_vasp_static_incar(
-    ecut, ediff, npar, kpar, kspacing=0.5, kgamma=True, ismear=1, sigma=0.2
-):
+def make_vasp_static_incar(ecut,
+                           ediff,
+                           npar,
+                           kpar,
+                           kspacing=0.5,
+                           kgamma=True,
+                           ismear=1,
+                           sigma=0.2):
     isif = 2
     ret = ""
     ret += "PREC=A\n"
@@ -300,17 +304,17 @@ def make_vasp_static_incar(
 
 
 def make_vasp_relax_incar(
-    ecut,
-    ediff,
-    relax_ion,
-    relax_shape,
-    relax_volume,
-    npar,
-    kpar,
-    kspacing=0.5,
-    kgamma=True,
-    ismear=1,
-    sigma=0.22,
+        ecut,
+        ediff,
+        relax_ion,
+        relax_shape,
+        relax_volume,
+        npar,
+        kpar,
+        kspacing=0.5,
+        kgamma=True,
+        ismear=1,
+        sigma=0.22,
 ):
     isif = _compute_isif(relax_ion, relax_shape, relax_volume)
     ret = ""
@@ -350,9 +354,14 @@ def make_vasp_relax_incar(
     return ret
 
 
-def make_vasp_phonon_incar(
-    ecut, ediff, npar, kpar, kspacing=0.5, kgamma=True, ismear=1, sigma=0.2
-):
+def make_vasp_phonon_incar(ecut,
+                           ediff,
+                           npar,
+                           kpar,
+                           kspacing=0.5,
+                           kgamma=True,
+                           ismear=1,
+                           sigma=0.2):
     isif = 2
     ret = ""
     ret += "PREC=A\n"
@@ -450,7 +459,8 @@ def poscar_scale(poscar_in, poscar_out, scale):
     elif "C" == lines[7][0] or "c" == lines[7][0]:
         lines = _poscar_scale_cartesian(lines, scale)
     else:
-        raise RuntimeError("Unknow poscar coord style at line 7: %s" % lines[7])
+        raise RuntimeError("Unknow poscar coord style at line 7: %s" %
+                           lines[7])
     with open(poscar_out, "w") as fout:
         fout.write("".join(lines))
 

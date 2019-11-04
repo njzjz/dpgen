@@ -60,7 +60,8 @@ def cmpt_vasp(jdata, conf_dir, supercell):
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
     if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+        print("# cannot find results for conf %s supercell %s" %
+              (conf_dir, supercell))
     sys.stdout.write("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list:
         struct_poscar = os.path.join(ii, "POSCAR")
@@ -70,9 +71,8 @@ def cmpt_vasp(jdata, conf_dir, supercell):
         natoms, epa, vpa = vasp.get_nev(outcar)
         evac = epa * natoms - equi_epa * natoms
         sys.stdout.write(
-            "%s: %7.3f  %7.3f %7.3f \n"
-            % (structure_dir, evac, epa * natoms, equi_epa * natoms)
-        )
+            "%s: %7.3f  %7.3f %7.3f \n" %
+            (structure_dir, evac, epa * natoms, equi_epa * natoms))
         # evac = epa * natoms - energy_shift
         # sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, energy_shift))
         # sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))
@@ -95,7 +95,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name):
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
     if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+        print("# cannot find results for conf %s supercell %s" %
+              (conf_dir, supercell))
     sys.stdout.write("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list:
         struct_poscar = os.path.join(ii, "POSCAR")
@@ -105,9 +106,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name):
         natoms, epa, vpa = lammps.get_nev(lmp_log)
         evac = epa * natoms - equi_epa * natoms
         sys.stdout.write(
-            "%s: %7.3f  %7.3f %7.3f \n"
-            % (structure_dir, evac, epa * natoms, equi_epa * natoms)
-        )
+            "%s: %7.3f  %7.3f %7.3f \n" %
+            (structure_dir, evac, epa * natoms, equi_epa * natoms))
         # evac = epa * natoms - energy_shift
         # sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, energy_shift))
         # sys.stdout.write ("%s: %7.3f\n" % (structure_dir, evac))
@@ -115,7 +115,9 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name):
 
 def _main():
     parser = argparse.ArgumentParser(description="cmpt 03.vacancy")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
     parser.add_argument("COPY", type=int, nargs=3, help="the path to conf")

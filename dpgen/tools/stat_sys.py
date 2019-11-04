@@ -11,7 +11,8 @@ import numpy as np
 
 from dpgen.tools.relabel import get_lmp_info
 
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             ".."))
 
 
 def ascii_hist(count):
@@ -40,8 +41,7 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
     # iters = iters[:2]
     for ii in iters:
         iter_tasks = glob.glob(
-            os.path.join(ii, "02.fp", "task.[0-9]*[0-9].[0-9]*[0-9]")
-        )
+            os.path.join(ii, "02.fp", "task.[0-9]*[0-9].[0-9]*[0-9]"))
         iter_tasks.sort()
         if verbose:
             print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))
@@ -50,17 +50,12 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
             sys_tasks_count[sys_idx] += 1
             linked_file = os.path.realpath(os.path.join(jj, "conf.dump"))
             linked_keys = linked_file.split("/")
-            task_record = (
-                linked_keys[-5]
-                + "."
-                + linked_keys[-3]
-                + "."
-                + linked_keys[-1].split(".")[0]
-            )
+            task_record = (linked_keys[-5] + "." + linked_keys[-3] + "." +
+                           linked_keys[-1].split(".")[0])
             task_record_keys = task_record.split(".")
             ens, temp, pres = get_lmp_info(
-                os.path.join(ii, "01.model_devi", linked_keys[-3], "input.lammps")
-            )
+                os.path.join(ii, "01.model_devi", linked_keys[-3],
+                             "input.lammps"))
             trait = [ens, temp, pres]
             if not trait in sys_tasks_trait[sys_idx]:
                 sys_tasks_trait[sys_idx].append(trait)
@@ -72,7 +67,8 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
         # print(sys[ii], sys_tasks_count[ii])
         tmp_all = []
         for jj in range(len(sys_tasks_trait[ii])):
-            tmp_all.append(sys_tasks_trait[ii][jj] + [sys_tasks_trait_count[ii][jj]])
+            tmp_all.append(sys_tasks_trait[ii][jj] +
+                           [sys_tasks_trait_count[ii][jj]])
         sys_tasks_all.append(tmp_all)
     for ii in sys_tasks_all:
         ii.sort()
@@ -89,15 +85,12 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
         for jj in range(len(sys_tasks_all[ii])):
             hist_str = ascii_hist(sys_tasks_all[ii][jj][3])
             if not mute:
-                print(
-                    (trait_fmt + hist_str)
-                    % (
-                        sys_tasks_all[ii][jj][0],
-                        sys_tasks_all[ii][jj][1],
-                        sys_tasks_all[ii][jj][2],
-                        sys_tasks_all[ii][jj][3],
-                    )
-                )
+                print((trait_fmt + hist_str) % (
+                    sys_tasks_all[ii][jj][0],
+                    sys_tasks_all[ii][jj][1],
+                    sys_tasks_all[ii][jj][2],
+                    sys_tasks_all[ii][jj][3],
+                ))
     os.chdir(cwd)
     return sys, sys_tasks_count, sys_tasks_all
 

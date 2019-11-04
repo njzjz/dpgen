@@ -36,7 +36,10 @@ def _split_tasks(tasks, group_size):
 
 
 class Dispatcher(object):
-    def __init__(self, remote_profile, context_type="local", batch_type="slurm"):
+    def __init__(self,
+                 remote_profile,
+                 context_type="local",
+                 batch_type="slurm"):
         self.remote_profile = remote_profile
         if context_type == "local":
             self.session = LocalSession(remote_profile)
@@ -66,18 +69,18 @@ class Dispatcher(object):
             raise RuntimeError("unknown batch " + batch_type)
 
     def run_jobs(
-        self,
-        resources,
-        command,
-        work_path,
-        tasks,
-        group_size,
-        forward_common_files,
-        forward_task_files,
-        backward_task_files,
-        forward_task_deference=True,
-        outlog="log",
-        errlog="err",
+            self,
+            resources,
+            command,
+            work_path,
+            tasks,
+            group_size,
+            forward_common_files,
+            forward_task_files,
+            backward_task_files,
+            forward_task_deference=True,
+            outlog="log",
+            errlog="err",
     ):
         # task_chunks = [
         #     [os.path.basename(j) for j in tasks[i:i + group_size]] \
@@ -100,9 +103,8 @@ class Dispatcher(object):
                 if chunk_sha1 in path_map:
                     # job_uuid = path_map[chunk_sha1][1].split('/')[-1]
                     job_uuid = path_map[chunk_sha1][2]
-                    dlog.debug(
-                        "load uuid %s for chunk %s" % (job_uuid, task_chunks_[ii])
-                    )
+                    dlog.debug("load uuid %s for chunk %s" %
+                               (job_uuid, task_chunks_[ii]))
                 else:
                     job_uuid = None
                 # communication context, bach system
@@ -112,20 +114,21 @@ class Dispatcher(object):
                 # upload files
                 if not rjob["context"].check_file_exists("tag_upload"):
                     rjob["context"].upload(".", forward_common_files)
-                    rjob["context"].upload(
-                        chunk, forward_task_files, dereference=forward_task_deference
-                    )
+                    rjob["context"].upload(chunk,
+                                           forward_task_files,
+                                           dereference=forward_task_deference)
                     rjob["context"].write_file("tag_upload", "")
                     dlog.debug("uploaded files for %s" % task_chunks_[ii])
                 # submit new or recover old submission
                 if job_uuid is None:
-                    rjob["batch"].submit(
-                        chunk, command, res=resources, outlog=outlog, errlog=errlog
-                    )
+                    rjob["batch"].submit(chunk,
+                                         command,
+                                         res=resources,
+                                         outlog=outlog,
+                                         errlog=errlog)
                     job_uuid = rjob["context"].job_uuid
-                    dlog.debug(
-                        "assigned uudi %s for %s " % (job_uuid, task_chunks_[ii])
-                    )
+                    dlog.debug("assigned uudi %s for %s " %
+                               (job_uuid, task_chunks_[ii]))
                     dlog.info("new submission of %s" % job_uuid)
                 else:
                     rjob["batch"].submit(
@@ -161,10 +164,11 @@ class Dispatcher(object):
                         fcount[idx] += 1
                         if fcount[idx] > 3:
                             raise RuntimeError(
-                                "Job %s failed for more than 3 times" % job_uuid
-                            )
+                                "Job %s failed for more than 3 times" %
+                                job_uuid)
                         dlog.info("job %s terminated, submit again" % job_uuid)
-                        dlog.debug("try %s times for %s" % (fcount[idx], job_uuid))
+                        dlog.debug("try %s times for %s" %
+                                   (fcount[idx], job_uuid))
                         rjob["batch"].submit(
                             task_chunks[idx],
                             command,
@@ -175,7 +179,8 @@ class Dispatcher(object):
                         )
                     elif status == JobStatus.finished:
                         dlog.info("job %s finished" % job_uuid)
-                        rjob["context"].download(task_chunks[idx], backward_task_files)
+                        rjob["context"].download(task_chunks[idx],
+                                                 backward_task_files)
                         rjob["context"].clean()
                         job_fin[idx] = True
                         _fr.write_record(job_fin)

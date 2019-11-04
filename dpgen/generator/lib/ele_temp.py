@@ -24,7 +24,7 @@ class NBandsEsti(object):
             vol = np.array(vol)
             d_nbd = np.array(d_nbd)
             nbd = np.array(nbd)
-            alpha = (nbd - d_nbd) / vol / ele_t ** 1.5
+            alpha = (nbd - d_nbd) / vol / ele_t**1.5
             self.err = np.std(alpha)
             self.pref = np.average(alpha)
             # print(np.average(alpha), np.std(alpha), self.err/self.pref)
@@ -47,7 +47,7 @@ class NBandsEsti(object):
         vol = res["vol"]
         d_nbd = NBandsEsti._get_default_nbands(res)
         nbd = res["nbands"]
-        esti = (self.pref + tolerance * self.err) * ele_t ** 1.5 * vol + d_nbd
+        esti = (self.pref + tolerance * self.err) * ele_t**1.5 * vol + d_nbd
         return int(esti) + 1
 
     @classmethod
@@ -56,12 +56,11 @@ class NBandsEsti(object):
         sys = dpdata.System(os.path.join(res_dir, "POSCAR"))
         res["natoms"] = sys["atom_numbs"]
         res["vol"] = np.linalg.det(sys["cells"][0])
-        res["nvalence"] = self._get_potcar_nvalence(os.path.join(res_dir, "POTCAR"))
+        res["nvalence"] = self._get_potcar_nvalence(
+            os.path.join(res_dir, "POTCAR"))
         res["ele_temp"] = (
-            self._get_incar_ele_temp(os.path.join(res_dir, "INCAR"))
-            * pc.electron_volt
-            / pc.Boltzmann
-        )
+            self._get_incar_ele_temp(os.path.join(res_dir, "INCAR")) *
+            pc.electron_volt / pc.Boltzmann)
         res["nbands"] = self._get_incar_nbands(os.path.join(res_dir, "INCAR"))
         return res
 

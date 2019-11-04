@@ -8,7 +8,8 @@ from collections import defaultdict
 import dpdata
 
 
-def stat_iter(target_folder, param_file="param.json", verbose=True, mute=False):
+def stat_iter(target_folder, param_file="param.json", verbose=True,
+              mute=False):
     jdata = {}
     with open(f"{target_folder}/{param_file}") as param_file:
         jdata = json.load(param_file)
@@ -46,7 +47,8 @@ def stat_iter(target_folder, param_file="param.json", verbose=True, mute=False):
             path_doc = os.path.abspath(line)
             pk_id, task_dirname, OUTCAR_filename = path_doc.rsplit("/", 2)
             try:
-                _sys = dpdata.LabeledSystem(path_doc, type_map=jdata["type_map"])
+                _sys = dpdata.LabeledSystem(path_doc,
+                                            type_map=jdata["type_map"])
             except:
                 try:
                     _sys = dpdata.LabeledSystem(
@@ -68,25 +70,24 @@ def stat_iter(target_folder, param_file="param.json", verbose=True, mute=False):
     for pk_id in {**iter_dict}:
         if iter_dict[pk_id]["OUTCAR_total_count"]:
             iter_dict[pk_id]["reff"] = round(
-                iter_dict[pk_id]["OUTCAR_not_convergence"]
-                / iter_dict[pk_id]["OUTCAR_total_count"],
+                iter_dict[pk_id]["OUTCAR_not_convergence"] /
+                iter_dict[pk_id]["OUTCAR_total_count"],
                 5,
             )
     for pk_id, value in iter_dict.items():
-        print(
-            f"{pk_id}:candidate:{value['candidate']}"
-            f":rest_failed:{value['rest_failed']}"
-            f":rest_accurate:{value['rest_accurate']}"
-            f":OUTCAR_total_count:{value['OUTCAR_total_count']}"
-            f":OUTCAR_not_convergence:{value['OUTCAR_not_convergence']}"
-            f":reff:{value['reff']}"
-        )
+        print(f"{pk_id}:candidate:{value['candidate']}"
+              f":rest_failed:{value['rest_failed']}"
+              f":rest_accurate:{value['rest_accurate']}"
+              f":OUTCAR_total_count:{value['OUTCAR_total_count']}"
+              f":OUTCAR_not_convergence:{value['OUTCAR_not_convergence']}"
+              f":reff:{value['reff']}")
 
 
-def stat_time(target_folder, param_file="param.json", verbose=True, mute=False):
+def stat_time(target_folder, param_file="param.json", verbose=True,
+              mute=False):
     script = os.path.join(os.path.dirname(__file__), "update_time.sh")
-    output = subprocess.run(
-        [f"bash {script} {target_folder}"], shell=True, stdout=subprocess.PIPE
-    ).stdout
+    output = subprocess.run([f"bash {script} {target_folder}"],
+                            shell=True,
+                            stdout=subprocess.PIPE).stdout
     data = output.decode()
     print(data)

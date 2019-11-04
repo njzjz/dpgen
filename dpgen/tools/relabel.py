@@ -14,7 +14,8 @@ from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.run import make_vasp_incar
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 
 def get_lmp_info(input_file):
@@ -92,12 +93,12 @@ def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files):
     os.chdir(cwd)
 
 
-def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
+def create_init_tasks(target_folder, param_file, output, fp_json,
+                      verbose=True):
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
-    tool_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "template"
-    )
+    tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..",
+                             "template")
     jdata = json.load(open(os.path.join(target_folder, param_file)))
     fp_jdata = json.load(open(fp_json))
     # fp settings
@@ -114,9 +115,9 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
     init_data_prefix = jdata["init_data_prefix"]
     init_data_sys = jdata["init_data_sys"]
     for idx, ii in enumerate(init_data_sys):
-        sys = dpdata.LabeledSystem(
-            os.path.join(init_data_prefix, ii), fmt="deepmd/npy", type_map=type_map
-        )
+        sys = dpdata.LabeledSystem(os.path.join(init_data_prefix, ii),
+                                   fmt="deepmd/npy",
+                                   type_map=type_map)
         nframes = sys.get_nframes()
         sys_dir = os.path.join(output, "init_system.%03d" % idx)
         os.makedirs(sys_dir, exist_ok=True)
@@ -138,7 +139,8 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
             if fp_style == "vasp":
                 if os.path.lexists("INCAR"):
                     os.remove("INCAR")
-                os.symlink(os.path.relpath(os.path.join(output, "INCAR")), "INCAR")
+                os.symlink(os.path.relpath(os.path.join(output, "INCAR")),
+                           "INCAR")
             elif fp_style == "pwscf":
                 try:
                     fp_params = fp_jdata["user_fp_params"]
@@ -146,22 +148,23 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
                 except:
                     fp_params = fp_jdata["fp_params"]
                     user_input = False
-                make_pwscf(
-                    ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
-                )
+                make_pwscf(".", fp_params, mass_map, fp_pp_files, fp_pp_files,
+                           user_input)
             elif fp_style == "siesta":
                 make_siesta(".", fp_params, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
 
 
-def create_tasks(
-    target_folder, param_file, output, fp_json, verbose=True, numb_iter=-1
-):
+def create_tasks(target_folder,
+                 param_file,
+                 output,
+                 fp_json,
+                 verbose=True,
+                 numb_iter=-1):
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
-    tool_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "template"
-    )
+    tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..",
+                             "template")
     jdata = json.load(open(os.path.join(target_folder, param_file)))
     fp_jdata = json.load(open(fp_json))
     # goto input
@@ -188,8 +191,7 @@ def create_tasks(
     # iters = iters[:2]
     for ii in iters[:numb_iter]:
         iter_tasks = glob.glob(
-            os.path.join(ii, "02.fp", "task.[0-9]*[0-9].[0-9]*[0-9]")
-        )
+            os.path.join(ii, "02.fp", "task.[0-9]*[0-9].[0-9]*[0-9]"))
         iter_tasks.sort()
         if verbose:
             print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))
@@ -203,17 +205,12 @@ def create_tasks(
             else:
                 raise RuntimeError("cannot file linked conf file")
             linked_keys = linked_file.split("/")
-            task_record = (
-                linked_keys[-5]
-                + "."
-                + linked_keys[-3]
-                + "."
-                + linked_keys[-1].split(".")[0]
-            )
+            task_record = (linked_keys[-5] + "." + linked_keys[-3] + "." +
+                           linked_keys[-1].split(".")[0])
             task_record_keys = task_record.split(".")
             ens, temp, pres = get_lmp_info(
-                os.path.join(ii, "01.model_devi", linked_keys[-3], "input.lammps")
-            )
+                os.path.join(ii, "01.model_devi", linked_keys[-3],
+                             "input.lammps"))
             human_record = (
                 "iter: %s   system: %s   model_devi_task: %s   frame: %6d   fp_task: %s   ens: %s   temp: %10.2f   pres: %10.2f"
                 % (
@@ -225,8 +222,7 @@ def create_tasks(
                     ens,
                     temp,
                     pres,
-                )
-            )
+                ))
             # print(human_record)
             sys_tasks_record[sys_idx].append(human_record)
     # for ii in range(numb_sys) :
@@ -248,7 +244,8 @@ def create_tasks(
             print("# working on " + sys_dir)
         for tt, rr in zip(sys_tasks[si], sys_tasks_record[si]):
             # copy poscar
-            source_path = os.path.join(("iter.%s/02.fp" % rr.split()[1]), rr.split()[9])
+            source_path = os.path.join(("iter.%s/02.fp" % rr.split()[1]),
+                                       rr.split()[9])
             source_file = os.path.join(source_path, "POSCAR")
             target_path = os.path.join(sys_dir, "task.%06d" % sys_tasks_cc[si])
             sys_tasks_cc[si] += 1
@@ -272,7 +269,8 @@ def create_tasks(
             if fp_style == "vasp":
                 if os.path.lexists("INCAR"):
                     os.remove("INCAR")
-                os.symlink(os.path.relpath(os.path.join(output, "INCAR")), "INCAR")
+                os.symlink(os.path.relpath(os.path.join(output, "INCAR")),
+                           "INCAR")
             elif fp_style == "pwscf":
                 try:
                     fp_params = fp_jdata["user_fp_params"]
@@ -280,9 +278,8 @@ def create_tasks(
                 except:
                     fp_params = fp_jdata["fp_params"]
                     user_input = False
-                make_pwscf(
-                    ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
-                )
+                make_pwscf(".", fp_params, mass_map, fp_pp_files, fp_pp_files,
+                           user_input)
             elif fp_style == "siesta":
                 make_siesta(".", fp_params, mass_map, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
@@ -291,21 +288,24 @@ def create_tasks(
 
 def _main():
     parser = argparse.ArgumentParser(
-        description="Create tasks for relabeling from a DP-GEN job"
-    )
-    parser.add_argument("JOB_DIR", type=str, help="the directory of the DP-GEN job")
-    parser.add_argument(
-        "PARAM", type=str, default="fp.json", help="the json file defines vasp tasks"
-    )
-    parser.add_argument(
-        "OUTPUT", type=str, help="the output directory of relabel tasks"
-    )
+        description="Create tasks for relabeling from a DP-GEN job")
+    parser.add_argument("JOB_DIR",
+                        type=str,
+                        help="the directory of the DP-GEN job")
+    parser.add_argument("PARAM",
+                        type=str,
+                        default="fp.json",
+                        help="the json file defines vasp tasks")
+    parser.add_argument("OUTPUT",
+                        type=str,
+                        help="the output directory of relabel tasks")
     parser.add_argument(
         "-p",
         "--parameter",
         type=str,
         default="param.json",
-        help="the json file provides DP-GEN paramters, should be located in JOB_DIR",
+        help=
+        "the json file provides DP-GEN paramters, should be located in JOB_DIR",
     )
     parser.add_argument(
         "-n",
@@ -314,7 +314,10 @@ def _main():
         default=-1,
         help="number of iterations to relabel",
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="being loud")
+    parser.add_argument("-v",
+                        "--verbose",
+                        action="store_true",
+                        help="being loud")
     args = parser.parse_args()
 
     create_tasks(
@@ -325,9 +328,11 @@ def _main():
         numb_iter=args.numb_iter,
         verbose=args.verbose,
     )
-    create_init_tasks(
-        args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, verbose=args.verbose
-    )
+    create_init_tasks(args.JOB_DIR,
+                      args.parameter,
+                      args.OUTPUT,
+                      args.PARAM,
+                      verbose=args.verbose)
 
 
 if __name__ == "__main__":

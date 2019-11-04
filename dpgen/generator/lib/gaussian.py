@@ -37,8 +37,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     mol = openbabel.OBMol()
     mol.BeginModify()
     for idx, (num, position) in enumerate(
-        zip(all_atoms.get_atomic_numbers(), all_atoms.positions)
-    ):
+            zip(all_atoms.get_atomic_numbers(), all_atoms.positions)):
         atom = mol.NewAtom(idx)
         atom.SetAtomicNum(int(num))
         atom.SetVector(*position)
@@ -60,9 +59,8 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
             b = realnumber[b - atomnumber]
         bonds.extend([[a, b, bo], [b, a, bo]])
     bonds = np.array(bonds, ndmin=2).reshape((-1, 3))
-    graph = csr_matrix(
-        (bonds[:, 2], (bonds[:, 0], bonds[:, 1])), shape=(atomnumber, atomnumber)
-    )
+    graph = csr_matrix((bonds[:, 2], (bonds[:, 0], bonds[:, 1])),
+                       shape=(atomnumber, atomnumber))
     frag_numb, frag_index = connected_components(graph, 0)
     if return_bonds:
         return frag_numb, frag_index, graph
@@ -71,17 +69,13 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
 
 def _crd2mul(symbols, crds):
     atomnumber = len(symbols)
-    xyzstring = "".join(
-        (
-            f"{atomnumber}\nDPGEN\n",
-            "\n".join(
-                [
-                    "{:2s} {:22.15f} {:22.15f} {:22.15f}".format(s, x, y, z)
-                    for s, (x, y, z) in zip(symbols, crds)
-                ]
-            ),
-        )
-    )
+    xyzstring = "".join((
+        f"{atomnumber}\nDPGEN\n",
+        "\n".join([
+            "{:2s} {:22.15f} {:22.15f} {:22.15f}".format(s, x, y, z)
+            for s, (x, y, z) in zip(symbols, crds)
+        ]),
+    ))
     conv = openbabel.OBConversion()
     conv.SetInAndOutFormats("xyz", "gjf")
     mol = openbabel.OBMol()
@@ -110,10 +104,8 @@ def make_gaussian_input(sys_data, fp_params):
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     nproc = fp_params["nproc"]
 
-    if (
-        "keywords_high_multiplicity" in fp_params
-        and _crd2mul(symbols, coordinates) >= 3
-    ):
+    if ("keywords_high_multiplicity" in fp_params
+            and _crd2mul(symbols, coordinates) >= 3):
         # multiplicity >= 3, meaning at least 2 radicals
         keywords = fp_params["keywords_high_multiplicity"]
     else:
@@ -149,15 +141,11 @@ def make_gaussian_input(sys_data, fp_params):
         if frag:
             multiplicity = sum(mult_frags) - frag_numb + 1
             chargekeywords_frag = "%d %d" % (charge, multiplicity) + "".join(
-                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags]
-            )
+                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags])
         else:
             multi_frags = np.array(mult_frags)
-            multiplicity = (
-                1
-                + np.count_nonzero(multi_frags == 2) % 2
-                + np.count_nonzero(multi_frags == 3) * 2
-            )
+            multiplicity = (1 + np.count_nonzero(multi_frags == 2) % 2 +
+                            np.count_nonzero(multi_frags == 3) * 2)
     buff = []
     # keywords, e.g., force b3lyp/6-31g**
     if frag:
@@ -183,28 +171,25 @@ def make_gaussian_input(sys_data, fp_params):
 
     for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
         if frag:
-            buff.append(
-                "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)
-            )
+            buff.append("%s(Fragment=%d) %f %f %f" %
+                        (symbol, frag_index[ii] + 1, *coordinate))
         else:
             buff.append("%s %f %f %f" % (symbol, *coordinate))
     if "basis_set" in fp_params:
         # custom basis set
         buff.extend(["", fp_params["basis_set"], ""])
     for kw in itertools.islice(keywords, 1, None):
-        buff.extend(
-            [
-                "\n--link1--",
-                *chkkeywords,
-                nprockeywords,
-                "#{}".format(kw),
-                "",
-                titlekeywords,
-                "",
-                chargekeywords,
-                "",
-            ]
-        )
+        buff.extend([
+            "\n--link1--",
+            *chkkeywords,
+            nprockeywords,
+            "#{}".format(kw),
+            "",
+            titlekeywords,
+            "",
+            chargekeywords,
+            "",
+        ])
     buff.append("\n")
     return "\n".join(buff)
 
@@ -218,9 +203,11 @@ def take_cluster(old_conf_name, type_map, idx, jdata):
     coords = sys["coords"][0]
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     # detect fragment
-    frag_numb, frag_index, graph = _crd2frag(
-        symbols, coords, True, cell, return_bonds=True
-    )
+    frag_numb, frag_index, graph = _crd2frag(symbols,
+                                             coords,
+                                             True,
+                                             cell,
+                                             return_bonds=True)
     # get_distances
     all_atoms = Atoms(symbols=symbols, positions=coords, pbc=True, cell=cell)
     all_atoms[idx].tag = 1
@@ -240,26 +227,23 @@ def take_cluster(old_conf_name, type_map, idx, jdata):
                     if np.any(np.isin(aa, cutoff_atoms_idx)):
                         take_frag_idx.append(aa)
                     elif np.count_nonzero(
-                        np.logical_and(distancescutoff, graph.toarray()[aa] == 1)
-                    ):
+                            np.logical_and(distancescutoff,
+                                           graph.toarray()[aa] == 1)):
                         if all_atoms[aa].symbol == "H":
                             take_frag_idx.append(aa)
                         elif all_atoms[aa].symbol == "C":
                             near_atom_idx = np.nonzero(
-                                np.logical_and(distancescutoff, graph.toarray()[aa] > 0)
-                            )[0][0]
-                            vector = (
-                                all_atoms[aa].position
-                                - all_atoms[near_atom_idx].position
-                            )
+                                np.logical_and(distancescutoff,
+                                               graph.toarray()[aa] > 0))[0][0]
+                            vector = (all_atoms[aa].position -
+                                      all_atoms[near_atom_idx].position)
                             new_position = (
-                                all_atoms[near_atom_idx].position
-                                + vector / np.linalg.norm(vector) * 1.09
-                            )
+                                all_atoms[near_atom_idx].position +
+                                vector / np.linalg.norm(vector) * 1.09)
                             added.append(Atom("H", new_position))
                     elif np.count_nonzero(
-                        np.logical_and(distancescutoff, graph.toarray()[aa] > 1)
-                    ):
+                            np.logical_and(distancescutoff,
+                                           graph.toarray()[aa] > 1)):
                         take_frag_idx = frag_atoms_idx
                         break
             else:
@@ -268,15 +252,16 @@ def take_cluster(old_conf_name, type_map, idx, jdata):
     all_taken_atoms_idx = np.concatenate(taken_atoms_idx)
     # wrap
     cutoff_atoms = sum(added, all_atoms[all_taken_atoms_idx])
-    cutoff_atoms.wrap(
-        center=coords[idx] / cutoff_atoms.get_cell_lengths_and_angles()[0:3], pbc=True
-    )
+    cutoff_atoms.wrap(center=coords[idx] /
+                      cutoff_atoms.get_cell_lengths_and_angles()[0:3],
+                      pbc=True)
     coords = cutoff_atoms.get_positions()
     sys.data["coords"] = np.array([coords])
     sys.data["atom_types"] = np.array(
-        list(atom_types[all_taken_atoms_idx]) + [atom_names.index("H")] * len(added)
-    )
+        list(atom_types[all_taken_atoms_idx]) +
+        [atom_names.index("H")] * len(added))
     sys.data["atom_pref"] = np.array([cutoff_atoms.get_tags()])
     for ii, _ in enumerate(atom_names):
-        sys.data["atom_numbs"][ii] = np.count_nonzero(sys.data["atom_types"] == ii)
+        sys.data["atom_numbs"][ii] = np.count_nonzero(
+            sys.data["atom_types"] == ii)
     return sys

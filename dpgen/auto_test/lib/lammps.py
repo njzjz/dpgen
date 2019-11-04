@@ -24,9 +24,8 @@ def cvt_lammps_conf(fin, fout, ofmt="lammps/data"):
     elif "poscar" in fout or "POSCAR" in fout:
         ofmt = "vasp/poscar"
     if not ofmt in supp_ofmt:
-        raise RuntimeError(
-            "output format " + ofmt + " is not supported. use one of " + str(supp_ofmt)
-        )
+        raise RuntimeError("output format " + ofmt +
+                           " is not supported. use one of " + str(supp_ofmt))
 
     if "lmp" in fout:
         d_poscar = dpdata.System(fin, fmt="vasp/poscar")
@@ -172,15 +171,15 @@ def make_lammps_eval(conf, ntypes, interaction, param):
 
 
 def make_lammps_equi(
-    conf,
-    ntypes,
-    interaction,
-    param,
-    etol=1e-12,
-    ftol=1e-6,
-    maxiter=5000,
-    maxeval=500000,
-    change_box=True,
+        conf,
+        ntypes,
+        interaction,
+        param,
+        etol=1e-12,
+        ftol=1e-6,
+        maxiter=5000,
+        maxeval=500000,
+        change_box=True,
 ):
     """
     make lammps input for equilibritation
@@ -233,14 +232,14 @@ def make_lammps_equi(
 
 
 def make_lammps_elastic(
-    conf,
-    ntypes,
-    interaction,
-    param,
-    etol=1e-12,
-    ftol=1e-6,
-    maxiter=5000,
-    maxeval=500000,
+        conf,
+        ntypes,
+        interaction,
+        param,
+        etol=1e-12,
+        ftol=1e-6,
+        maxiter=5000,
+        maxeval=500000,
 ):
     """
     make lammps input for elastic calculation
@@ -285,17 +284,17 @@ def make_lammps_elastic(
 
 
 def make_lammps_press_relax(
-    conf,
-    ntypes,
-    scale2equi,
-    interaction,
-    param,
-    B0=70,
-    bp=0,
-    etol=1e-12,
-    ftol=1e-6,
-    maxiter=5000,
-    maxeval=500000,
+        conf,
+        ntypes,
+        scale2equi,
+        interaction,
+        param,
+        B0=70,
+        bp=0,
+        etol=1e-12,
+        ftol=1e-6,
+        maxiter=5000,
+        maxeval=500000,
 ):
     """
     make lammps input for relaxation at a certain volume
@@ -354,14 +353,14 @@ def make_lammps_press_relax(
 
 
 def make_lammps_phonon(
-    conf,
-    masses,
-    interaction,
-    param,
-    etol=1e-12,
-    ftol=1e-6,
-    maxiter=5000,
-    maxeval=500000,
+        conf,
+        masses,
+        interaction,
+        param,
+        etol=1e-12,
+        ftol=1e-6,
+        maxiter=5000,
+        maxeval=500000,
 ):
     """
     make lammps input for elastic calculation
@@ -387,8 +386,7 @@ def _get_epa(lines):
         if ("Final energy per atoms" in ii) and (not "print" in ii):
             return float(ii.split("=")[1].split()[0])
     raise RuntimeError(
-        'cannot find key "Final energy per atoms" in lines, something wrong'
-    )
+        'cannot find key "Final energy per atoms" in lines, something wrong')
 
 
 def _get_vpa(lines):
@@ -396,8 +394,7 @@ def _get_vpa(lines):
         if ("Final volume per atoms" in ii) and (not "print" in ii):
             return float(ii.split("=")[1].split()[0])
     raise RuntimeError(
-        'cannot find key "Final volume per atoms" in lines, something wrong'
-    )
+        'cannot find key "Final volume per atoms" in lines, something wrong')
 
 
 def _get_natoms(lines):
@@ -405,8 +402,7 @@ def _get_natoms(lines):
         if ("Total number of atoms" in ii) and (not "print" in ii):
             return int(ii.split("=")[1].split()[0])
     raise RuntimeError(
-        'cannot find key "Total number of atoms" in lines, something wrong'
-    )
+        'cannot find key "Total number of atoms" in lines, something wrong')
 
 
 def get_nev(log):
@@ -456,14 +452,17 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map):
         if "ITEM: TIMESTEP" in ii:
             step_idx = idx
     if step_idx == -1:
-        raise RuntimeError("cannot find timestep in lammps dump, something wrong")
+        raise RuntimeError(
+            "cannot find timestep in lammps dump, something wrong")
     with open("tmp_dump", "w") as fp:
         fp.write("\n".join(lines[step_idx:]))
     cvt_lammps_conf("tmp_dump", poscar_out, ofmt="vasp")
     os.remove("tmp_dump")
     with open(poscar_out, "r") as fp:
         lines = fp.read().split("\n")
-    types = [deepmd_type_map[int(ii.split("_")[1]) - 1] for ii in lines[5].split()]
+    types = [
+        deepmd_type_map[int(ii.split("_")[1]) - 1] for ii in lines[5].split()
+    ]
     lines[5] = " ".join(types)
     with open(poscar_out, "w") as fp:
         lines = fp.write("\n".join(lines))

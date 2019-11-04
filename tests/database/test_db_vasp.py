@@ -24,7 +24,8 @@ from .context import parsing_vasp
 from .context import setUpModule
 from .context import VaspInput
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0,
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "database"
 
 iter_pat = "02.fp/task.007.00000*"
@@ -50,7 +51,8 @@ class Test(unittest.TestCase):
                 shutil.rmtree(path)
             tar_file(path + ".tar.gz")
             assert os.path.isdir(path)
-        self.ref_init_input = loadfn(os.path.join(self.cwd, "data/init_input.json"))
+        self.ref_init_input = loadfn(
+            os.path.join(self.cwd, "data/init_input.json"))
         self.ref_entries = loadfn(os.path.join(self.cwd, "data/entries.json"))
         self.init_path = sorted(glob(os.path.join(self.r_init_path, init_pat)))
         self.iter_path = sorted(glob(os.path.join(self.r_iter_path, iter_pat)))
@@ -90,10 +92,10 @@ class Test(unittest.TestCase):
         for f in self.init_path:
             vi = VaspInput.from_directory(f)
             self.assertEqual(vi["INCAR"], self.ref_init_input["INCAR"])
-            self.assertEqual(str(vi["POTCAR"]), str(self.ref_init_input["POTCAR"]))
-            self.assertEqual(
-                vi["POSCAR"].structure, self.ref_init_input["POSCAR"].structure
-            )
+            self.assertEqual(str(vi["POTCAR"]),
+                             str(self.ref_init_input["POTCAR"]))
+            self.assertEqual(vi["POSCAR"].structure,
+                             self.ref_init_input["POSCAR"].structure)
 
     def testEntry(self):
         entries = []
@@ -114,12 +116,10 @@ class Test(unittest.TestCase):
         self.assertEqual(len(entries), len(self.ref_entries))
         ret0 = entries[0]
         r0 = self.ref_entries[0]
-        self.assertEqual(
-            Incar.from_dict(ret0.inputs["INCAR"]), Incar.from_dict(r0.inputs["INCAR"])
-        )
-        self.assertEqual(
-            str(r0.inputs["KPOINTS"]), str(Kpoints.from_dict(ret0.inputs["KPOINTS"]))
-        )
+        self.assertEqual(Incar.from_dict(ret0.inputs["INCAR"]),
+                         Incar.from_dict(r0.inputs["INCAR"]))
+        self.assertEqual(str(r0.inputs["KPOINTS"]),
+                         str(Kpoints.from_dict(ret0.inputs["KPOINTS"])))
 
         self.assertEqual(ret0.inputs["POTCAR"], r0.inputs["POTCAR"].as_dict())
         self.assertEqual(

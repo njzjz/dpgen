@@ -29,19 +29,20 @@ from .context import post_fp_siesta
 from .context import post_fp_vasp
 from .context import setUpModule
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0,
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
 
 class TestPostFPVasp(unittest.TestCase):
     def setUp(self):
         assert os.path.isdir(
-            "out_data_post_fp_vasp"
-        ), "out data for post fp vasp should exist"
+            "out_data_post_fp_vasp"), "out data for post fp vasp should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_vasp", "iter.000000")
-        self.ref_coord = [[[0, 0, 0], [2.3, 2.3, 2.3]], [[0, 0, 0], [2.2, 2.3, 2.4]]]
+        self.ref_coord = [[[0, 0, 0], [2.3, 2.3, 2.3]],
+                          [[0, 0, 0], [2.2, 2.3, 2.4]]]
         self.ref_cell = [4.6 * np.eye(3), 4.6 * np.eye(3)]
         # type_map = ["Mg", "Al"], Al OUTCAR provided
         self.ref_at = [1, 1]
@@ -51,7 +52,8 @@ class TestPostFPVasp(unittest.TestCase):
             [[-0.110216, 0.0, 0.110216], [0.110216, -0.0, -0.110216]],
         ]
         self.ref_v = [
-            [[1.50816698, 0.0, -0.0], [0.0, 1.50816698, 0.0], [-0.0, 0.0, 1.50816795]],
+            [[1.50816698, 0.0, -0.0], [0.0, 1.50816698, 0.0],
+             [-0.0, 0.0, 1.50816795]],
             [
                 [1.45208913, 0.0, 0.03036584],
                 [0.0, 1.67640928, 0.0],
@@ -75,7 +77,8 @@ class TestPostFPVasp(unittest.TestCase):
         jdata["use_ele_temp"] = 2
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/", fmt="deepmd/raw")
+        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/",
+                                   fmt="deepmd/raw")
         self.assertEqual(sys.get_nframes(), 2)
 
         if sys.data["coords"][0][1][0] < sys.data["coords"][1][1][0]:
@@ -96,23 +99,21 @@ class TestPostFPVasp(unittest.TestCase):
         for ff in range(2):
             for ii in range(2):
                 for dd in range(3):
-                    self.assertAlmostEqual(
-                        ref_coord[ff][ii][dd], sys.data["coords"][ff][ii][dd]
-                    )
-                    self.assertAlmostEqual(
-                        ref_f[ff][ii][dd], sys.data["forces"][ff][ii][dd]
-                    )
+                    self.assertAlmostEqual(ref_coord[ff][ii][dd],
+                                           sys.data["coords"][ff][ii][dd])
+                    self.assertAlmostEqual(ref_f[ff][ii][dd],
+                                           sys.data["forces"][ff][ii][dd])
         for ff in range(2):
             for ii in range(3):
                 for jj in range(3):
-                    self.assertAlmostEqual(
-                        ref_v[ff][ii][jj], sys.data["virials"][ff][ii][jj], places=5
-                    )
-                    self.assertAlmostEqual(
-                        ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
-                    )
+                    self.assertAlmostEqual(ref_v[ff][ii][jj],
+                                           sys.data["virials"][ff][ii][jj],
+                                           places=5)
+                    self.assertAlmostEqual(ref_cell[ff][ii][jj],
+                                           sys.data["cells"][ff][ii][jj])
 
-        self.assertTrue(os.path.isfile("iter.000000/02.fp/data.000/set.000/aparam.npy"))
+        self.assertTrue(
+            os.path.isfile("iter.000000/02.fp/data.000/set.000/aparam.npy"))
         aparam = np.load("iter.000000/02.fp/data.000/set.000/aparam.npy")
         natoms = sys.get_natoms()
         self.assertEqual(natoms, 2)
@@ -126,7 +127,8 @@ class TestPostFPVasp(unittest.TestCase):
         jdata["use_ele_temp"] = 1
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/", fmt="deepmd/raw")
+        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/",
+                                   fmt="deepmd/raw")
         self.assertEqual(sys.get_nframes(), 1)
 
         # if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
@@ -147,21 +149,18 @@ class TestPostFPVasp(unittest.TestCase):
         for ff in range(1):
             for ii in range(2):
                 for dd in range(3):
-                    self.assertAlmostEqual(
-                        ref_coord[ff][ii][dd], sys.data["coords"][ff][ii][dd]
-                    )
-                    self.assertAlmostEqual(
-                        ref_f[ff][ii][dd], sys.data["forces"][ff][ii][dd]
-                    )
+                    self.assertAlmostEqual(ref_coord[ff][ii][dd],
+                                           sys.data["coords"][ff][ii][dd])
+                    self.assertAlmostEqual(ref_f[ff][ii][dd],
+                                           sys.data["forces"][ff][ii][dd])
         for ff in range(1):
             for ii in range(3):
                 for jj in range(3):
-                    self.assertAlmostEqual(
-                        ref_v[ff][ii][jj], sys.data["virials"][ff][ii][jj], places=5
-                    )
-                    self.assertAlmostEqual(
-                        ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
-                    )
+                    self.assertAlmostEqual(ref_v[ff][ii][jj],
+                                           sys.data["virials"][ff][ii][jj],
+                                           places=5)
+                    self.assertAlmostEqual(ref_cell[ff][ii][jj],
+                                           sys.data["cells"][ff][ii][jj])
 
         fparam = np.load("iter.000000/02.fp/data.001/set.000/fparam.npy")
         self.assertEqual(fparam.shape[0], 1)
@@ -181,19 +180,18 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 2
-        assert os.path.isdir(
-            "out_data_post_fp_pwscf"
-        ), "out data for post fp pwscf should exist"
+        assert os.path.isdir("out_data_post_fp_pwscf"
+                             ), "out data for post fp pwscf should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_pwscf", "iter.000000")
         with open(param_pwscf_file, "r") as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
-        self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
-        self.system_2 = dpdata.LabeledSystem(
-            "iter.000000/02.fp/data.000", fmt="deepmd/raw"
-        )
+        self.system_1 = dpdata.LabeledSystem("iter.000000/orig",
+                                             fmt="deepmd/raw")
+        self.system_2 = dpdata.LabeledSystem("iter.000000/02.fp/data.000",
+                                             fmt="deepmd/raw")
 
 
 class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
@@ -202,19 +200,18 @@ class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_siesta"
-        ), "out data for post fp siesta should exist"
+        assert os.path.isdir("out_data_post_fp_siesta"
+                             ), "out data for post fp siesta should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_siesta", "iter.000000")
         with open(param_siesta_file, "r") as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
-        self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
-        self.system_2 = dpdata.LabeledSystem(
-            "iter.000000/02.fp/data.000", fmt="deepmd/raw"
-        )
+        self.system_1 = dpdata.LabeledSystem("iter.000000/orig",
+                                             fmt="deepmd/raw")
+        self.system_2 = dpdata.LabeledSystem("iter.000000/02.fp/data.000",
+                                             fmt="deepmd/raw")
 
 
 class TestPostGaussian(unittest.TestCase, CompLabeledSys):
@@ -223,19 +220,18 @@ class TestPostGaussian(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_gaussian"
-        ), "out data for post fp gaussian should exist"
+        assert os.path.isdir("out_data_post_fp_gaussian"
+                             ), "out data for post fp gaussian should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_gaussian", "iter.000000")
         with open(param_gaussian_file, "r") as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
-        self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
-        self.system_2 = dpdata.LabeledSystem(
-            "iter.000000/02.fp/data.000", fmt="deepmd/raw"
-        )
+        self.system_1 = dpdata.LabeledSystem("iter.000000/orig",
+                                             fmt="deepmd/raw")
+        self.system_2 = dpdata.LabeledSystem("iter.000000/02.fp/data.000",
+                                             fmt="deepmd/raw")
 
 
 class TestPostCP2K(unittest.TestCase, CompLabeledSys):
@@ -244,19 +240,18 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_cp2k"
-        ), "out data for post fp gaussian should exist"
+        assert os.path.isdir("out_data_post_fp_cp2k"
+                             ), "out data for post fp gaussian should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_cp2k", "iter.000000")
         with open(param_cp2k_file, "r") as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
-        self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
-        self.system_2 = dpdata.LabeledSystem(
-            "iter.000000/02.fp/data.000", fmt="deepmd/raw"
-        )
+        self.system_1 = dpdata.LabeledSystem("iter.000000/orig",
+                                             fmt="deepmd/raw")
+        self.system_2 = dpdata.LabeledSystem("iter.000000/02.fp/data.000",
+                                             fmt="deepmd/raw")
 
 
 if __name__ == "__main__":

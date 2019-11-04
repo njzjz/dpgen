@@ -16,7 +16,8 @@ from .context import param_file_v1
 from .context import param_file_v1_et
 from .context import setUpModule
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0,
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
 
@@ -43,7 +44,8 @@ def _comp_sys_files(sys0, sys1):
 def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
     for ii in init_data_sys:
         sys0 = os.path.join(init_data_prefix, ii)
-        sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init", ii)
+        sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init",
+                            ii)
         testCase.assertTrue(
             _comp_sys_files(sys0, sys1),
             "systems %s %s are not identical" % (sys0, sys1),
@@ -52,8 +54,7 @@ def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
 
 def _check_numb_models(testCase, iter_idx, numb_models):
     models = glob.glob(
-        os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")
-    )
+        os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]"))
     testCase.assertTrue(len(models), numb_models)
 
 
@@ -74,8 +75,8 @@ def _check_model_inputs(testCase, iter_idx, jdata):
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
         with open(
-            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
-        ) as fp:
+                os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk,
+                             train_param)) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
         for ii in jdata0.keys():
@@ -91,9 +92,8 @@ def _check_model_inputs(testCase, iter_idx, jdata):
                 testCase.assertEqual(jdata0[ii], default_training_param[ii])
 
 
-def _check_model_input_dict(
-    testCase, input_dict, init_data_sys, init_batch_size, default_training_param
-):
+def _check_model_input_dict(testCase, input_dict, init_data_sys,
+                            init_batch_size, default_training_param):
     for ii in input_dict.keys():
         if ii == "systems":
             for jj, kk in zip(input_dict[ii], init_data_sys):
@@ -130,16 +130,20 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata):
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
         with open(
-            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
-        ) as fp:
+                os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk,
+                             train_param)) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
         if use_ele_temp == 1:
-            testCase.assertTrue("numb_fparam" in jdata0["model"]["fitting_net"])
-            testCase.assertFalse("numb_aparam" in jdata0["model"]["fitting_net"])
+            testCase.assertTrue(
+                "numb_fparam" in jdata0["model"]["fitting_net"])
+            testCase.assertFalse(
+                "numb_aparam" in jdata0["model"]["fitting_net"])
         if use_ele_temp == 2:
-            testCase.assertTrue("numb_aparam" in jdata0["model"]["fitting_net"])
-            testCase.assertFalse("numb_fparam" in jdata0["model"]["fitting_net"])
+            testCase.assertTrue(
+                "numb_aparam" in jdata0["model"]["fitting_net"])
+            testCase.assertFalse(
+                "numb_fparam" in jdata0["model"]["fitting_net"])
         _check_model_input_dict(
             testCase,
             jdata0["model"]["descriptor"],
@@ -179,11 +183,11 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata):
 
 def _make_fake_fp(iter_idx, sys_idx, nframes):
     for ii in range(nframes):
-        dirname = os.path.join(
-            "iter.%06d" % iter_idx, "02.fp", "task.%03d.%06d" % (sys_idx, ii)
-        )
+        dirname = os.path.join("iter.%06d" % iter_idx, "02.fp",
+                               "task.%03d.%06d" % (sys_idx, ii))
         os.makedirs(dirname, exist_ok=True)
-    dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)
+    dirname = os.path.join("iter.%06d" % iter_idx, "02.fp",
+                           "data.%03d" % sys_idx)
     os.makedirs(dirname, exist_ok=True)
     box_str = ["0" for ii in range(9)]
     box_str = " ".join(box_str)
@@ -233,11 +237,8 @@ class TestMakeTrain(unittest.TestCase):
         # check data is linked
         self.assertTrue(
             os.path.isdir(
-                os.path.join(
-                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
-                )
-            )
-        )
+                os.path.join("iter.000001", "00.train", "data.iters",
+                             "iter.000000", "02.fp")))
         # check models inputs
         _check_model_inputs(self, 1, jdata)
         # remove testing dirs
@@ -255,8 +256,7 @@ class TestMakeTrain(unittest.TestCase):
         # make iter1 train
         make_train(1, jdata, mdata)
         self.assertTrue(
-            os.path.isfile(os.path.join("iter.000001", "00.train", "copied"))
-        )
+            os.path.isfile(os.path.join("iter.000001", "00.train", "copied")))
         # check pb file linked
         _check_pb_link(self, 1, jdata["numb_models"])
         # remove testing dirs
@@ -277,11 +277,8 @@ class TestMakeTrain(unittest.TestCase):
         # check data is linked
         self.assertTrue(
             os.path.isdir(
-                os.path.join(
-                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
-                )
-            )
-        )
+                os.path.join("iter.000001", "00.train", "data.iters",
+                             "iter.000000", "02.fp")))
         # check models inputs
         _check_model_inputs_v1(self, 1, jdata)
         # remove testing dirs
@@ -301,11 +298,8 @@ class TestMakeTrain(unittest.TestCase):
         # check data is linked
         self.assertTrue(
             os.path.isdir(
-                os.path.join(
-                    "iter.000001", "00.train", "data.iters", "iter.000000", "02.fp"
-                )
-            )
-        )
+                os.path.join("iter.000001", "00.train", "data.iters",
+                             "iter.000000", "02.fp")))
         # check models inputs
         _check_model_inputs_v1(self, 1, jdata)
         # remove testing dirs

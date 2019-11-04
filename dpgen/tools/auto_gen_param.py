@@ -42,7 +42,8 @@ class System(object):
     def add_sub_system(self, idx2, files_list):
         idx1 = self.register_sub_system()
         idx2 = self.current_idx2
-        self.sub_system_list.append((idx1, self.index_system, idx2, files_list))
+        self.sub_system_list.append(
+            (idx1, self.index_system, idx2, files_list))
         self.current_idx2 += 1
 
     def get_sub_system(self):
@@ -72,18 +73,19 @@ class Iteration(object):
         return cls.current_num_of_sub_itearation - 1
 
     def __init__(
-        self,
-        temps,
-        nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
-        sub_iteration_num=8,
-        ensemble="npt",
-        press=[1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0],
-        trj_freq=10,
+            self,
+            temps,
+            nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
+            sub_iteration_num=8,
+            ensemble="npt",
+            press=[
+                1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0
+            ],
+            trj_freq=10,
     ):
         if len(nsteps_list) != sub_iteration_num:
             raise RuntimeError(
-                f"{nsteps_list}, {sub_iteration_num}; length does not match"
-            )
+                f"{nsteps_list}, {sub_iteration_num}; length does not match")
         self.temps = temps
         self.index_iteration = self.register_iteration()
         self.nsteps_list = nsteps_list
@@ -100,7 +102,9 @@ class Iteration(object):
             iter_dict["ensemble"] = self.ensemble
             iter_dict["nsteps"] = self.nsteps_list[idx2]
             iter_dict["press"] = self.press
-            iter_dict["sys_idx"] = [ii[0] for ii in system_list if ii[2] == idx2]
+            iter_dict["sys_idx"] = [
+                ii[0] for ii in system_list if ii[2] == idx2
+            ]
             iter_dict["temps"] = self.temps
             iter_dict["trj_freq"] = self.trj_freq
             sub_iter_list.append(iter_dict)
@@ -126,12 +130,12 @@ def default_map_generator(map_list=[1, 1, 2, 2, 2, 4, 4, 4], data_list=None):
 
 
 def get_system_list(
-    system_dict,
-    map_list=[1, 1, 2, 2, 2, 4, 4, 4],
-    meta_iter_num=4,
-    sub_iteration_num=8,
-    map_iterator=None,
-    file_name="POSCAR",
+        system_dict,
+        map_list=[1, 1, 2, 2, 2, 4, 4, 4],
+        meta_iter_num=4,
+        sub_iteration_num=8,
+        map_iterator=None,
+        file_name="POSCAR",
 ):
     """
     :type map_iterator: Iterable use to generate sys_configs
@@ -146,18 +150,16 @@ def get_system_list(
     for system_prefix, data_list in system_dict.items():
         if map_iterator is None:
             print("12", data_list)
-            new_map_iterator = default_map_generator(
-                map_list=map_list, data_list=data_list
-            )
+            new_map_iterator = default_map_generator(map_list=map_list,
+                                                     data_list=data_list)
         else:
-            origin_one, new_map_iterator = tee(
-                map_iterator
-            )  # pylint: disable=unused-variable
+            origin_one, new_map_iterator = tee(map_iterator)  # pylint: disable=unused-variable
         # tee means copy;new_map_generator will become a copy of map_iterator
         system = System(system_prefix)
         for idx2 in range(sub_iteration_num):
             files_list = [
-                os.path.join(system_prefix, jj) for jj in next(new_map_iterator)
+                os.path.join(system_prefix, jj)
+                for jj in next(new_map_iterator)
             ]
             system.add_sub_system(idx2=idx2, files_list=files_list)
         system_list.extend(system.get_sub_system())
@@ -172,7 +174,8 @@ def scan_files(scan_dir="./", file_name="POSCAR", min_allow_files_num=20):
         if file_name in ii[2]:
             system_prefix = os.path.dirname(ii[0])
             system_suffix = os.path.basename(ii[0])
-            system_dict[system_prefix].append(os.path.join(system_suffix, file_name))
+            system_dict[system_prefix].append(
+                os.path.join(system_suffix, file_name))
     for k, v in list(system_dict.items()):
         if len(v) < min_allow_files_num:
             del system_dict[k]
@@ -198,26 +201,27 @@ def default_temps_generator(melt_point, temps_intervel=0.1, num_temps=5):
 
 
 def get_model_devi_jobs(
-    melt_point,
-    system_list,
-    nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
-    press=[1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0],
-    meta_iter_num=4,
-    sub_iteration_num=8,
-    temps_iterator=None,
-    ensemble="npt",
-    trj_freq=10,
-    temps_intervel=0.1,
-    num_temps=5,
+        melt_point,
+        system_list,
+        nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
+        press=[1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0],
+        meta_iter_num=4,
+        sub_iteration_num=8,
+        temps_iterator=None,
+        ensemble="npt",
+        trj_freq=10,
+        temps_intervel=0.1,
+        num_temps=5,
 ):
 
     if temps_iterator is None:
-        temps_iterator = default_temps_generator(
-            melt_point=melt_point, temps_intervel=temps_intervel, num_temps=num_temps
-        )
+        temps_iterator = default_temps_generator(melt_point=melt_point,
+                                                 temps_intervel=temps_intervel,
+                                                 num_temps=num_temps)
 
     if len(nsteps_list) != sub_iteration_num:
-        raise RuntimeError(f"{nsteps_list}, {sub_iteration_num};length do not match!")
+        raise RuntimeError(
+            f"{nsteps_list}, {sub_iteration_num};length do not match!")
     model_devi_jobs = []
     for ii in range(meta_iter_num):  # pylint: disable=unused-variable
         temps = next(temps_iterator)
@@ -252,26 +256,27 @@ def get_init_data_sys(scan_dir="./", init_file_name="type.raw"):
 
 
 def get_basic_param_json(
-    melt_point,
-    out_param_filename="param.json",
-    scan_dir="./",
-    file_name="POSCAR",
-    init_file_name="type.raw",
-    min_allow_files_num=16,
-    map_list=[1, 1, 2, 2, 2, 4, 4, 4],
-    meta_iter_num=4,
-    sub_iteration_num=8,
-    map_iterator=None,
-    nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
-    press=[1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0],
-    temps_iterator=None,
-    ensemble="npt",
-    trj_freq=10,
-    temps_intervel=0.1,
-    num_temps=5,
+        melt_point,
+        out_param_filename="param.json",
+        scan_dir="./",
+        file_name="POSCAR",
+        init_file_name="type.raw",
+        min_allow_files_num=16,
+        map_list=[1, 1, 2, 2, 2, 4, 4, 4],
+        meta_iter_num=4,
+        sub_iteration_num=8,
+        map_iterator=None,
+        nsteps_list=[500, 500, 1000, 1000, 3000, 3000, 6000, 6000],
+        press=[1.0, 10.0, 100.0, 1000.0, 5000.0, 10000.0, 20000.0, 50000.0],
+        temps_iterator=None,
+        ensemble="npt",
+        trj_freq=10,
+        temps_intervel=0.1,
+        num_temps=5,
 ):
 
-    init_data_sys = get_init_data_sys(scan_dir=scan_dir, init_file_name=init_file_name)
+    init_data_sys = get_init_data_sys(scan_dir=scan_dir,
+                                      init_file_name=init_file_name)
     print(f"length of init_data_sys: {len(init_data_sys)} {init_data_sys}")
     system_dict = scan_files(scan_dir, file_name, min_allow_files_num)
     print(f"num of different systems: {len(system_dict)}")
@@ -310,8 +315,7 @@ def get_basic_param_json(
 
 def _main():
     parser = argparse.ArgumentParser(
-        description="Collect data from inputs and generate basic param.json"
-    )
+        description="Collect data from inputs and generate basic param.json")
     parser.add_argument("melt_point", type=float, help="melt_point")
     # parser.addparser.add_argument("JOB_DIR", type=str, help="the directory of the DP-GEN job")
     args = parser.parse_args()

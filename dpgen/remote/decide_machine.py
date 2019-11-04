@@ -64,7 +64,8 @@ def decide_train_machine(mdata):
                 temp_context = SSHContext(cwd, temp_ssh_sess)
                 temp_batch = Slurm(temp_context)
                 command = temp_batch._make_squeue(temp_machine, temp_resources)
-                ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
+                ret, stdin, stdout, stderr = temp_batch.context.block_call(
+                    command)
                 pd_response = stdout.read().decode("utf-8").split("\n")
                 pd_count = len(pd_response)
                 temp_context.clean()
@@ -74,20 +75,16 @@ def decide_train_machine(mdata):
                     mdata["train_resources"] = temp_resources
                     if "deepmd_path" in mdata["train"][machine_idx]:
                         mdata["deepmd_path"] = mdata["train"][machine_idx][
-                            "deepmd_path"
-                        ]
+                            "deepmd_path"]
                     elif "python_path" in mdata["train"][machine_idx]:
                         mdata["python_path"] = mdata["train"][machine_idx][
-                            "python_path"
-                        ]
+                            "python_path"]
                     if "group_size" in mdata["train"][machine_idx]:
-                        mdata["train_group_size"] = mdata["train"][machine_idx][
-                            "group_size"
-                        ]
+                        mdata["train_group_size"] = mdata["train"][
+                            machine_idx]["group_size"]
                     if "deepmd_version" in mdata["train"][machine_idx]:
                         mdata["deepmd_version"] = mdata["train"][machine_idx][
-                            "deepmd_version"
-                        ]
+                            "deepmd_version"]
 
                     # No need to wait
                     pd_flag = True
@@ -98,24 +95,22 @@ def decide_train_machine(mdata):
                 # All machines need waiting, then compare waiting jobs
                 # Select a machine which has fewest waiting jobs
                 min_machine_idx = np.argsort(pd_count_list)[0]
-                mdata["train_machine"] = mdata["train"][min_machine_idx]["machine"]
-                mdata["train_resources"] = mdata["train"][min_machine_idx]["resources"]
+                mdata["train_machine"] = mdata["train"][min_machine_idx][
+                    "machine"]
+                mdata["train_resources"] = mdata["train"][min_machine_idx][
+                    "resources"]
                 if "deepmd_path" in mdata["train"][min_machine_idx]:
                     mdata["deepmd_path"] = mdata["train"][min_machine_idx][
-                        "deepmd_path"
-                    ]
+                        "deepmd_path"]
                 elif "python_path" in mdata["train"][min_machine_idx]:
                     mdata["python_path"] = mdata["train"][min_machine_idx][
-                        "python_path"
-                    ]
+                        "python_path"]
                 if "group_size" in mdata["train"][min_machine_idx]:
-                    mdata["train_group_size"] = mdata["train"][min_machine_idx][
-                        "group_size"
-                    ]
+                    mdata["train_group_size"] = mdata["train"][
+                        min_machine_idx]["group_size"]
                 if "deepmd_version" in mdata["train"][min_machine_idx]:
                     mdata["deepmd_version"] = mdata["train"][min_machine_idx][
-                        "deepmd_version"
-                    ]
+                        "deepmd_version"]
 
             # Record which machine is selected
             with open("record.machine", "w") as _outfile:
@@ -156,7 +151,8 @@ def decide_model_devi_machine(mdata):
             mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
             mdata["lmp_command"] = mdata["model_devi"][0]["command"]
             # if "group_size" in mdata["train"][0]:
-            mdata["model_devi_group_size"] = mdata["model_devi"][0]["group_size"]
+            mdata["model_devi_group_size"] = mdata["model_devi"][0][
+                "group_size"]
             continue_flag = True
         pd_count_list = []
         pd_flag = False
@@ -177,33 +173,32 @@ def decide_model_devi_machine(mdata):
                 temp_context = SSHContext(cwd, temp_ssh_sess)
                 temp_batch = Slurm(temp_context)
                 command = temp_batch._make_squeue(temp_machine, temp_resources)
-                ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
+                ret, stdin, stdout, stderr = temp_batch.context.block_call(
+                    command)
                 pd_response = stdout.read().decode("utf-8").split("\n")
                 pd_count = len(pd_response)
                 temp_context.clean()
                 if pd_count == 0:
                     mdata["model_devi_machine"] = temp_machine
                     mdata["model_devi_resources"] = temp_resources
-                    mdata["lmp_command"] = mdata["model_devi"][machine_idx]["command"]
-                    mdata["model_devi_group_size"] = mdata["model_devi"][machine_idx][
-                        "group_size"
-                    ]
+                    mdata["lmp_command"] = mdata["model_devi"][machine_idx][
+                        "command"]
+                    mdata["model_devi_group_size"] = mdata["model_devi"][
+                        machine_idx]["group_size"]
                     pd_flag = True
                     break
                 else:
                     pd_count_list.append(pd_count)
             if not pd_flag:
                 min_machine_idx = np.argsort(pd_count_list)[0]
-                mdata["model_devi_machine"] = mdata["model_devi"][min_machine_idx][
-                    "machine"
-                ]
-                mdata["model_devi_resources"] = mdata["model_devi"][min_machine_idx][
-                    "resources"
-                ]
-                mdata["lmp_command"] = mdata["model_devi"][min_machine_idx]["command"]
-                mdata["model_devi_group_size"] = mdata["model_devi"][min_machine_idx][
-                    "group_size"
-                ]
+                mdata["model_devi_machine"] = mdata["model_devi"][
+                    min_machine_idx]["machine"]
+                mdata["model_devi_resources"] = mdata["model_devi"][
+                    min_machine_idx]["resources"]
+                mdata["lmp_command"] = mdata["model_devi"][min_machine_idx][
+                    "command"]
+                mdata["model_devi_group_size"] = mdata["model_devi"][
+                    min_machine_idx]["group_size"]
             with open("record.machine", "w") as _outfile:
                 profile = {}
                 profile["purpose"] = "model_devi"
@@ -255,7 +250,8 @@ def decide_fp_machine(mdata):
                 temp_context = SSHContext(cwd, temp_ssh_sess)
                 temp_batch = Slurm(temp_context)
                 command = temp_batch._make_squeue(temp_machine, temp_resources)
-                ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
+                ret, stdin, stdout, stderr = temp_batch.context.block_call(
+                    command)
                 pd_response = stdout.read().decode("utf-8").split("\n")
                 pd_count = len(pd_response)
                 temp_context.clean()
@@ -264,7 +260,8 @@ def decide_fp_machine(mdata):
                     mdata["fp_machine"] = temp_machine
                     mdata["fp_resources"] = temp_resources
                     mdata["fp_command"] = mdata["fp"][machine_idx]["command"]
-                    mdata["fp_group_size"] = mdata["fp"][machine_idx]["group_size"]
+                    mdata["fp_group_size"] = mdata["fp"][machine_idx][
+                        "group_size"]
                     pd_flag = True
                     break
                 else:
@@ -272,9 +269,11 @@ def decide_fp_machine(mdata):
             if not pd_flag:
                 min_machine_idx = np.argsort(pd_count_list)[0]
                 mdata["fp_machine"] = mdata["fp"][min_machine_idx]["machine"]
-                mdata["fp_resources"] = mdata["fp"][min_machine_idx]["resources"]
+                mdata["fp_resources"] = mdata["fp"][min_machine_idx][
+                    "resources"]
                 mdata["fp_command"] = mdata["fp"][min_machine_idx]["command"]
-                mdata["fp_group_size"] = mdata["fp"][min_machine_idx]["group_size"]
+                mdata["fp_group_size"] = mdata["fp"][min_machine_idx][
+                    "group_size"]
 
             with open("record.machine", "w") as _outfile:
                 profile = {}

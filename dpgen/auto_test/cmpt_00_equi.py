@@ -40,8 +40,7 @@ def comput_lmp_nev(conf_dir, task_name, write_stable=False):
         if len(ele_types) > 1:
             raise RuntimeError(
                 "stable energy and volume only for one element, current you have %s from POSCAR"
-                % str(ele_types)
-            )
+                % str(ele_types))
     ener_shift = comput_e_shift(poscar, task_name)
 
     lmp_path = os.path.join(conf_path, task_name)
@@ -52,7 +51,8 @@ def comput_lmp_nev(conf_dir, task_name, write_stable=False):
         if write_stable:
             stable_dir = "stables"
             os.makedirs(stable_dir, exist_ok=True)
-            name_prefix = os.path.join(stable_dir, "%s.%s" % (ele_types[0], task_name))
+            name_prefix = os.path.join(stable_dir,
+                                       "%s.%s" % (ele_types[0], task_name))
             open(name_prefix + ".e", "w").write("%.16f\n" % (epa))
             open(name_prefix + ".v", "w").write("%.16f\n" % (vpa))
         return natoms, epa, vpa
@@ -70,8 +70,7 @@ def comput_vasp_nev(jdata, conf_dir, write_stable=False):
         if len(ele_types) > 1:
             raise RuntimeError(
                 "stable energy and volume only for one element, current you have %s from POSCAR"
-                % str(ele_types)
-            )
+                % str(ele_types))
 
     if "relax_incar" in jdata.keys():
         vasp_str = "vasp-relax_incar"
@@ -93,7 +92,8 @@ def comput_vasp_nev(jdata, conf_dir, write_stable=False):
         if write_stable:
             stable_dir = "stables"
             os.makedirs(stable_dir, exist_ok=True)
-            name_prefix = os.path.join(stable_dir, "%s." % (ele_types[0]) + vasp_str)
+            name_prefix = os.path.join(stable_dir,
+                                       "%s." % (ele_types[0]) + vasp_str)
             open(name_prefix + ".e", "w").write("%.16f\n" % (epa))
             open(name_prefix + ".v", "w").write("%.16f\n" % (vpa))
         return natoms, epa, vpa
@@ -111,7 +111,10 @@ def _main():
     )
     parser.add_argument("PARAM", type=str, help="the json param")
     parser.add_argument("CONF", type=str, help="the dir of conf")
-    parser.add_argument("-s", "--stable", action="store_true", help="the dir of conf")
+    parser.add_argument("-s",
+                        "--stable",
+                        action="store_true",
+                        help="the dir of conf")
     args = parser.parse_args()
     with open(args.PARAM, "r") as fp:
         jdata = json.load(fp)
@@ -123,10 +126,9 @@ def _main():
         if le == None or ve == None or lv == None or vv == None:
             print("%s" % args.CONF)
         else:
-            print(
-                "%s\t %8.4f %8.4f %8.4f  %7.3f %7.3f %7.3f  %8.4f %7.3f"
-                % (args.CONF, ve, le, (me), vv, lv, (mv), (le - ve), (lv - vv))
-            )
+            print("%s\t %8.4f %8.4f %8.4f  %7.3f %7.3f %7.3f  %8.4f %7.3f" %
+                  (args.CONF, ve, le, (me), vv, lv, (mv), (le - ve),
+                   (lv - vv)))
     elif args.TASK == "vasp":
         vn, ve, vv = comput_vasp_nev(jdata, args.CONF, args.stable)
         print("%s\t %8.4f  %7.3f " % (args.CONF, ve, vv))

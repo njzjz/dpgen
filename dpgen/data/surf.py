@@ -245,9 +245,10 @@ def make_super_cell_pymatgen(jdata):
         path_cur_surf = create_path("surf-" + miller_str)
         os.chdir(path_cur_surf)
         # slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
-        slab = general_surface.surface(
-            ss, indices=miller, vacuum=1e-3, layers=layer_numb
-        )
+        slab = general_surface.surface(ss,
+                                       indices=miller,
+                                       vacuum=1e-3,
+                                       layers=layer_numb)
         # all_slabs = slabgen.get_slabs()
         dlog.info(os.getcwd())
         # dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
@@ -412,7 +413,8 @@ def make_scale(jdata):
                 assert os.path.isfile(pos_src)
             else:
                 try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+                    pos_src = os.path.join(os.path.join(init_path, ii),
+                                           "CONTCAR")
                     assert os.path.isfile(pos_src)
                 except:
                     raise RuntimeError(
@@ -439,10 +441,10 @@ def pert_scaled(jdata):
             elongs = np.arange(vacuum_resol[0], vacuum_max, vacuum_resol[0])
         elif len(vacuum_resol) == 2:
             mid_point = jdata.get("mid_point")
-            head_elongs = np.arange(
-                vacuum_resol[0], mid_point, vacuum_resol[0]
-            ).tolist()
-            tail_elongs = np.arange(mid_point, vacuum_max, vacuum_resol[1]).tolist()
+            head_elongs = np.arange(vacuum_resol[0], mid_point,
+                                    vacuum_resol[0]).tolist()
+            tail_elongs = np.arange(mid_point, vacuum_max,
+                                    vacuum_resol[1]).tolist()
             elongs = np.unique(head_elongs + tail_elongs).tolist()
         else:
             raise RuntimeError("the length of vacuum_resol must equal 1 or 2")
@@ -454,7 +456,8 @@ def pert_scaled(jdata):
         head_numb = int(vacuum_num * head_ratio)
         tail_numb = vacuum_num - head_numb
         head_elongs = np.linspace(0, mid_point, head_numb).tolist()
-        tail_elongs = np.linspace(mid_point, vacuum_max, tail_numb + 1).tolist()
+        tail_elongs = np.linspace(mid_point, vacuum_max,
+                                  tail_numb + 1).tolist()
         elongs = np.unique(head_elongs + tail_elongs).tolist()
 
     cwd = os.getcwd()
@@ -466,9 +469,8 @@ def pert_scaled(jdata):
     sys_pe.sort()
     os.chdir(cwd)
 
-    pert_cmd = "python " + os.path.join(
-        ROOT_PATH, "data/tools/create_random_disturb.py"
-    )
+    pert_cmd = "python " + os.path.join(ROOT_PATH,
+                                        "data/tools/create_random_disturb.py")
     pert_cmd += " -etmax %f -ofmt vasp POSCAR %d %f > /dev/null" % (
         pert_box,
         pert_numb,
@@ -563,7 +565,8 @@ def gen_init_surf(args):
         import ruamel
         from monty.serialization import loadfn, dumpfn
 
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+        warnings.simplefilter("ignore",
+                              ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
@@ -602,9 +605,10 @@ def gen_init_surf(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generating initial data for surface systems."
-    )
-    parser.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
+        description="Generating initial data for surface systems.")
+    parser.add_argument("PARAM",
+                        type=str,
+                        help="parameter file, json/yaml format")
     parser.add_argument(
         "MACHINE",
         type=str,

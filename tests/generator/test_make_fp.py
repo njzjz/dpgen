@@ -31,7 +31,8 @@ from .context import param_siesta_file
 from .context import parse_cur_job
 from .context import setUpModule
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0,
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
 vasp_incar_ref = "PREC=A\n\
@@ -125,7 +126,6 @@ WriteDMHS.NetCDF       F\n\
 1	6	C\n\
 2	1	H\n\
 3	7	N\n"
-
 
 gaussian_input_ref = """%nproc=14
 #force b3lyp/6-31g*
@@ -250,10 +250,8 @@ def _write_lammps_dump(sys, dump_file, f_idx=0):
             fp.write("%f %f %f\n" % (bd[ii][0], bd[ii][1], tilt[ii]))
         fp.write("ITEM: ATOMS id type x y z\n")
         for ii in range(natoms):
-            fp.write(
-                "%d %d %f %f %f\n"
-                % (ii + 1, atype[ii] + 1, coord[ii][0], coord[ii][1], coord[ii][2])
-            )
+            fp.write("%d %d %f %f %f\n" % (ii + 1, atype[ii] + 1, coord[ii][0],
+                                           coord[ii][1], coord[ii][2]))
 
 
 def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
@@ -278,14 +276,12 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
             coords = np.random.random([nframes, natoms, 3])
             sys.data["coords"] = coords
             sys.data["cells"] = cells
-            task_dir = os.path.join(
-                "iter.%06d" % idx, "01.model_devi", "task.%03d.%06d" % (sidx, midx)
-            )
+            task_dir = os.path.join("iter.%06d" % idx, "01.model_devi",
+                                    "task.%03d.%06d" % (sidx, midx))
             os.makedirs(os.path.join(task_dir, "traj"), exist_ok=True)
             for ii in range(nframes):
                 _write_lammps_dump(
-                    sys, os.path.join(task_dir, "traj", "%d.lammpstrj" % ii)
-                )
+                    sys, os.path.join(task_dir, "traj", "%d.lammpstrj" % ii))
             md_out = np.zeros([nframes, 7])
             md_out[:, 0] = np.arange(nframes)
             md_out[:, 4] = mm
@@ -312,11 +308,13 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
         cc = 0
         for tt, ff in zip(md_task, f_idx):
             traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))
-            poscar_file = os.path.join(
-                fp_path, "task.%03d.%06d" % (int(sidx), cc), "POSCAR"
-            )
+            poscar_file = os.path.join(fp_path,
+                                       "task.%03d.%06d" % (int(sidx), cc),
+                                       "POSCAR")
             cc += 1
-            sys0 = dpdata.System(traj_file, fmt="lammps/dump", type_map=type_map)
+            sys0 = dpdata.System(traj_file,
+                                 fmt="lammps/dump",
+                                 type_map=type_map)
             sys1 = dpdata.System(poscar_file, fmt="vasp/poscar")
             test_atom_names(testCase, sys0, sys1)
 
@@ -343,9 +341,8 @@ def _check_kpoints(testCase, idx):
                 gamma = True
             else:
                 gamma = False
-        ret = make_kspacing_kpoints(
-            os.path.join(os.path.join(ii, "POSCAR")), kspacing, gamma
-        )
+        ret = make_kspacing_kpoints(os.path.join(os.path.join(ii, "POSCAR")),
+                                    kspacing, gamma)
         kpoints_ref = Kpoints.from_string(ret)
         testCase.assertEqual(repr(kpoints), repr(kpoints_ref))
 
@@ -355,14 +352,16 @@ def _check_incar_exists(testCase, idx):
     # testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
-        my_file_cmp(testCase, os.path.join(fp_path, "INCAR"), os.path.join(ii, "INCAR"))
+        my_file_cmp(testCase, os.path.join(fp_path, "INCAR"),
+                    os.path.join(ii, "INCAR"))
 
 
 def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files):
     nfile = len(fp_pp_files)
     fp_path = os.path.join("iter.%06d" % idx, "02.fp")
     for ii in range(nfile):
-        testCase.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
+        testCase.assertTrue(
+            os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         for jj in range(nfile):
@@ -420,16 +419,16 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
             incar0 = Incar.from_string(incar)
             # make_fake_md: the frames in a system shares the same ele_temp
             incar1 = Incar.from_string(
-                vasp_incar_ele_temp_ref
-                % (ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt)
-            )
+                vasp_incar_ele_temp_ref %
+                (ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt))
             for ii in incar0.keys():
                 # skip checking nbands...
                 if ii == "NBANDS":
                     continue
-                testCase.assertAlmostEqual(
-                    incar0[ii], incar1[ii], msg="key %s differ" % (ii), places=5
-                )
+                testCase.assertAlmostEqual(incar0[ii],
+                                           incar1[ii],
+                                           msg="key %s differ" % (ii),
+                                           places=5)
         os.chdir(cwd)
 
 
@@ -445,7 +444,8 @@ def _check_pwscf_input_head(testCase, idx):
             if "ATOMIC_SPECIES" in jj:
                 break
         lines = lines[:idx]
-        testCase.assertEqual(("\n".join(lines)).strip(), pwscf_input_ref.strip())
+        testCase.assertEqual(("\n".join(lines)).strip(),
+                             pwscf_input_ref.strip())
 
 
 def _check_siesta_input_head(testCase, idx):
@@ -460,7 +460,8 @@ def _check_siesta_input_head(testCase, idx):
             if "%endblock Chemical_Species_label" in jj:
                 break
         lines = lines[:idx]
-        testCase.assertEqual(("\n".join(lines)).strip(), siesta_input_ref.strip())
+        testCase.assertEqual(("\n".join(lines)).strip(),
+                             siesta_input_ref.strip())
 
 
 def _check_gaussian_input_head(testCase, idx):
@@ -475,7 +476,8 @@ def _check_gaussian_input_head(testCase, idx):
             if "0 1" in jj:
                 break
         lines = lines[:idx]
-        testCase.assertEqual(("\n".join(lines)).strip(), gaussian_input_ref.strip())
+        testCase.assertEqual(("\n".join(lines)).strip(),
+                             gaussian_input_ref.strip())
 
 
 def _check_cp2k_input_head(testCase, idx):
@@ -491,8 +493,9 @@ def _check_cp2k_input_head(testCase, idx):
                 cell_start_idx = idx
             if "&END CELL" in jj:
                 cell_end_idx = idx
-        lines_check = lines[: cell_start_idx + 1] + lines[cell_end_idx:]
-        testCase.assertEqual(("\n".join(lines_check)).strip(), cp2k_input_ref.strip())
+        lines_check = lines[:cell_start_idx + 1] + lines[cell_end_idx:]
+        testCase.assertEqual(("\n".join(lines_check)).strip(),
+                             cp2k_input_ref.strip())
 
 
 class TestMakeFPPwscf(unittest.TestCase):

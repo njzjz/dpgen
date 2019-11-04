@@ -15,7 +15,6 @@ import dpgen.auto_test.lib.vasp as vasp
 
 global_equi_name = "00.equi"
 global_task_name = "01.eos"
-
 """
 link poscar
 link potcar
@@ -42,7 +41,8 @@ def make_vasp(jdata, conf_dir):
         os.chdir(cwd)
     vol_to_poscar = vasp.poscar_vol(to_poscar) / vasp.poscar_natoms(to_poscar)
     # print(to_poscar, vol_to_poscar)
-    is_alloy = os.path.exists(os.path.join(os.path.join(conf_path, ".."), "alloy"))
+    is_alloy = os.path.exists(
+        os.path.join(os.path.join(conf_path, ".."), "alloy"))
     # read potcar
     with open(to_poscar, "r") as fp:
         lines = fp.read().split("\n")
@@ -50,9 +50,8 @@ def make_vasp(jdata, conf_dir):
     potcar_map = jdata["potcar_map"]
     potcar_list = []
     for ii in ele_list:
-        assert os.path.exists(
-            os.path.abspath(potcar_map[ii])
-        ), "No POTCAR in the potcar_map of %s" % (ii)
+        assert os.path.exists(os.path.abspath(
+            potcar_map[ii])), "No POTCAR in the potcar_map of %s" % (ii)
         potcar_list.append(os.path.abspath(potcar_map[ii]))
 
     # gen incar
@@ -70,9 +69,8 @@ def make_vasp(jdata, conf_dir):
         kpar = fp_params["kpar"]
         kspacing = fp_params["kspacing"]
         kgamma = fp_params["kgamma"]
-        fc = vasp.make_vasp_relax_incar(
-            ecut, ediff, is_alloy, True, False, npar, kpar, kspacing, kgamma
-        )
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy, True, False,
+                                        npar, kpar, kspacing, kgamma)
         vasp_path = os.path.join(task_path, "vasp-k%.2f" % kspacing)
 
     os.makedirs(vasp_path, exist_ok=True)
@@ -97,10 +95,11 @@ def make_vasp(jdata, conf_dir):
                 os.remove(ii)
         # link incar, potcar
         os.symlink(os.path.relpath(os.path.join(vasp_path, "INCAR")), "INCAR")
-        os.symlink(os.path.relpath(os.path.join(vasp_path, "POTCAR")), "POTCAR")
+        os.symlink(os.path.relpath(os.path.join(vasp_path, "POTCAR")),
+                   "POTCAR")
         # gen poscar
         os.symlink(os.path.relpath(to_poscar), "POSCAR.orig")
-        scale = (vol / vol_to_poscar) ** (1.0 / 3.0)
+        scale = (vol / vol_to_poscar)**(1.0 / 3.0)
         # print(scale)
         vasp.poscar_scale("POSCAR.orig", "POSCAR", scale)
         # print(vol_path, vasp.poscar_vol('POSCAR') / vasp.poscar_natoms('POSCAR'))
@@ -201,15 +200,14 @@ def make_lammps(jdata, conf_dir, task_type):
         for (ii, jj) in zip(share_models, model_name):
             os.symlink(os.path.relpath(ii), jj)
         # make lammps input
-        scale = (vol / vpa) ** (1.0 / 3.0)
+        scale = (vol / vpa)**(1.0 / 3.0)
         if task_type == "deepmd":
-            fc = lammps.make_lammps_press_relax(
-                "conf.lmp", ntypes, scale, lammps.inter_deepmd, model_name
-            )
+            fc = lammps.make_lammps_press_relax("conf.lmp", ntypes, scale,
+                                                lammps.inter_deepmd,
+                                                model_name)
         elif task_type == "meam":
-            fc = lammps.make_lammps_press_relax(
-                "conf.lmp", ntypes, scale, lammps.inter_meam, model_param
-            )
+            fc = lammps.make_lammps_press_relax("conf.lmp", ntypes, scale,
+                                                lammps.inter_meam, model_param)
         with open(os.path.join(vol_path, "lammps.in"), "w") as fp:
             fp.write(fc)
         os.chdir(cwd)
@@ -258,13 +256,17 @@ def make_lammps_fixv(jdata, conf_dir, task_type):
     ss = Structure.from_file(task_poscar)
     # make lammps.in
     if task_type == "deepmd":
-        fc = lammps.make_lammps_equi(
-            "conf.lmp", ntypes, lammps.inter_deepmd, model_name, change_box=False
-        )
+        fc = lammps.make_lammps_equi("conf.lmp",
+                                     ntypes,
+                                     lammps.inter_deepmd,
+                                     model_name,
+                                     change_box=False)
     elif task_type == "meam":
-        fc = lammps.make_lammps_equi(
-            "conf.lmp", ntypes, lammps.inter_meam, model_param, change_box=False
-        )
+        fc = lammps.make_lammps_equi("conf.lmp",
+                                     ntypes,
+                                     lammps.inter_meam,
+                                     model_param,
+                                     change_box=False)
     f_lammps_in = os.path.join(task_path, "lammps.in")
     with open(f_lammps_in, "w") as fp:
         fp.write(fc)
@@ -304,12 +306,15 @@ def make_lammps_fixv(jdata, conf_dir, task_type):
 
 def _main():
     parser = argparse.ArgumentParser(description="gen 01.eos")
-    parser.add_argument("TASK", type=str, help="the task of generation, vasp or lammps")
+    parser.add_argument("TASK",
+                        type=str,
+                        help="the task of generation, vasp or lammps")
     parser.add_argument("PARAM", type=str, help="json parameter file")
     parser.add_argument("CONF", type=str, help="the path to conf")
-    parser.add_argument(
-        "-f", "--fix-shape", action="store_true", help="fix shape of box"
-    )
+    parser.add_argument("-f",
+                        "--fix-shape",
+                        action="store_true",
+                        help="fix shape of box")
     args = parser.parse_args()
 
     with open(args.PARAM, "r") as fp:
