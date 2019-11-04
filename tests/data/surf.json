@@ -16,7 +16,7 @@
     0.5,
     1
   ],
-  "mid_point": 4.0,
+  "mid_point": 4,
   "head_ratio": 0.6,
   "vacuum_numb": 20,
   "millers": [
@@ -32,10 +32,10 @@
   "potcars": [
     "./POTCAR"
   ],
-  "relax_incar" : "INCAR_metal_rlx_low",
+  "relax_incar": "INCAR_metal_rlx_low",
   "scale": [
     0.98,
-    1.0
+    1
   ],
   "skip_relax": true,
   "pert_numb": 5,
