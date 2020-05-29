@@ -564,7 +564,7 @@ def parse_cur_job(cur_job) :
     if 'npt' in ensemble :
         temps = _get_param_alias(cur_job, ['Ts','temps'])
         press = _get_param_alias(cur_job, ['Ps','press'])
-    elif 'nvt' == ensemble :
+    elif 'nvt' == ensemble or 'nve' == ensemble:
         temps = _get_param_alias(cur_job, ['Ts','temps'])
     nsteps = _get_param_alias(cur_job, ['nsteps'])
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
@@ -704,43 +704,104 @@ def make_model_devi (iter_index,
     conf_path = os.path.join(work_path, 'confs')
     create_path(conf_path)
     sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        for cc in ss :
-            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
-            orig_poscar_name = conf_name + '.orig.poscar'
-            poscar_name = conf_name + '.poscar'
-            lmp_name = conf_name + '.lmp'
-            if shuffle_poscar :
-                os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
-                poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
-                               os.path.join(conf_path, poscar_name))
-            else :
-                os.symlink(cc, os.path.join(conf_path, poscar_name))
-            if 'sys_format' in jdata:
-                fmt = jdata['sys_format']
-            else:
-                fmt = 'vasp/poscar'
-            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
-            if jdata.get('model_devi_nopbc', False):
-                system.remove_pbc()
-            system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
-            conf_counter += 1
-        sys_counter += 1
+    model_devi_style = jdata.get('model_devi_style', 'lammps')
+    if model_devi_style == 'lammps':
+        for ss in conf_systems:
+            conf_counter = 0
+            for cc in ss :
+                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+                orig_poscar_name = conf_name + '.orig.poscar'
+                poscar_name = conf_name + '.poscar'
+                lmp_name = conf_name + '.lmp'
+                if shuffle_poscar :
+                    os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
+                    poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
+                                os.path.join(conf_path, poscar_name))
+                else :
+                    os.symlink(cc, os.path.join(conf_path, poscar_name))
+                if 'sys_format' in jdata:
+                    fmt = jdata['sys_format']
+                else:
+                    fmt = 'vasp/poscar'
+                system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
+                if jdata.get('model_devi_nopbc', False):
+                    system.remove_pbc()
+                system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
+                conf_counter += 1
+            sys_counter += 1
 
-    input_mode = "native"
-    if "template" in cur_job:
-        input_mode = "revise_template"
-    use_plm = jdata.get('model_devi_plumed', False)
-    use_plm_path = jdata.get('model_devi_plumed_path', False)
-    if input_mode == "native":
-        _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
-    elif input_mode == "revise_template":
-        _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
+        input_mode = "native"
+        if "template" in cur_job:
+            input_mode = "revise_template"
+        use_plm = jdata.get('model_devi_plumed', False)
+        use_plm_path = jdata.get('model_devi_plumed_path', False)
+        if input_mode == "native":
+            _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
+        elif input_mode == "revise_template":
+            _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
+        else:
+            raise RuntimeError('unknown model_devi input mode', input_mode)
+    elif model_devi_style == 'amber':
+        for sys_counter, ss in enumerate(conf_systems):
+            for conf_counter, cc in enumerate(ss) :
+                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+                rst7_name = conf_name + '.rst7'
+                os.symlink(cc, os.path.join(conf_path, rst7_name))
+        _make_model_devi_amber(iter_index, jdata, mdata, conf_systems)
     else:
-        raise RuntimeError('unknown model_devi input mode', input_mode)
+        raise RuntimeError('unknown model_devi input type')
 
     return True
+
+def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
+    model_devi_jobs = jdata['model_devi_jobs']
+    if (iter_index >= len(model_devi_jobs)) :
+        return False
+    cur_job = model_devi_jobs[iter_index]   
+    sys_idx = expand_idx(cur_job['sys_idx'])
+    if (len(sys_idx) != len(list(set(sys_idx)))) :
+        raise RuntimeError("system index should be uniq")
+    
+    iter_name = make_iter_name(iter_index)
+    train_path = os.path.join(iter_name, train_name)
+    train_path = os.path.abspath(train_path)
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    task_model_list = []
+    for ii in models:
+        task_model_list.append(os.path.join('..', os.path.basename(ii)))
+    work_path = os.path.join(iter_name, model_devi_name)
+
+    sys_counter = 0
+    for ss in conf_systems:
+        conf_counter = 0
+        task_counter = 0
+        for cc in ss :
+            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+            task_path = os.path.join(work_path, task_name)
+            # create task path
+            create_path(task_path)
+            create_path(os.path.join(task_path, 'traj'))
+            # link conf
+            loc_conf_name = 'init.rst7'
+            os.symlink(os.path.join(os.path.join('..','confs'), conf_name + ".rst7"),
+                       os.path.join(task_path, loc_conf_name) )
+            cwd_ = os.getcwd()
+            # chdir to task path
+            os.chdir(task_path)                
+            os.symlink(cur_job['mdin'], 'init.mdin')
+            os.symlink(cur_job['parm7'], 'qmmm.parm7')
+            r=jdata['r'][sys_counter][task_counter]
+            with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
+                fw.write(f.read().replace("RVAL", r))
+
+            with open('job.json', 'w') as fp:
+                json.dump(cur_job, fp, indent = 4)
+            os.chdir(cwd_)
+            task_counter += 1
+            conf_counter += 1
+        sys_counter += 1                    
+    
 
 
 def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
@@ -952,7 +1013,6 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata) :
     #rmdlog.info("This module has been run !")
-    lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
@@ -964,7 +1024,17 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    command = lmp_exec + " -i input.lammps"
+    model_devi_style = jdata.get('model_devi_style', 'lammps')
+    if model_devi_style == 'lammps':
+        lmp_exec = mdata['lmp_command']
+        command = lmp_exec + " -i input.lammps"
+        forward_files = ['conf.lmp', 'input.lammps', 'traj']
+        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+    elif model_devi_style == 'amber':
+        command = mdata['amber_command']
+        forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
+        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo']
+
     commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
@@ -985,8 +1055,7 @@ def run_model_devi (iter_index,
     #dlog.info("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
-    forward_files = ['conf.lmp', 'input.lammps', 'traj']
-    backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+
     if use_plm:
         forward_files += ['input.plumed']
        # backward_files += ['output.plumed']
@@ -1649,6 +1718,72 @@ def make_fp_pwmat (iter_index,
     # 2, create pwmat input
     _make_fp_pwmat_input(iter_index, jdata)
 
+
+def make_fp_amber(iter_index, jdata):
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    create_path(work_path)
+    modd_path = os.path.join(iter_name, model_devi_name)
+
+    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    modd_task.sort()
+    system_index = []
+    for ii in modd_task :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_tasks=[]
+    fp_params = jdata['fp_params']
+
+    convert_py="""
+from dpgen.generator.lib.amber import get_amber_fp
+ms = get_amber_fp(
+    cutoff={cutoff}, 
+    parmfile='qmmm.parm7',
+    nc='prod.nc',
+    ll='low_level',
+    hl='high_level',
+    type_map={type_map},
+    important_atoms={important_atoms}, 
+)
+ms.to_deepmd_npy("dataset",set_size=999999)
+""".format(
+    type_map=jdata['type_map'],
+    cutoff=fp_params['cutoff'],
+    important_atoms=fp_params['important_atoms'],
+)
+
+    for ss in system_index :
+        modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
+        modd_system_task = glob.glob(modd_system_glob)
+        modd_system_task.sort()
+
+        for cc, tt in enumerate(modd_system_task):
+            fp_task_name = make_fp_task_name(int(ss), cc)
+            fp_task_path = os.path.join(work_path, fp_task_name)
+            create_path(fp_task_path)
+            fp_tasks.append(fp_task_path)
+            cwd = os.getcwd()
+            os.chdir(fp_task_path)
+            
+            # link rc.nc
+            os.symlink(os.path.relpath(os.path.join(cwd, tt, "rc.nc")), 'rc.nc')
+            os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
+            os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
+            os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
+            os.symlink(jdata['fp_params']['ptrajin'] ,'ptraj.in')
+            
+            with open("convert_dpdata.py", 'w') as f:
+                f.write(convert_py)
+
+
+            os.chdir(cwd)
+    if len(fp_tasks) == 0 :
+        return
+
+            
 def make_fp (iter_index,
              jdata,
              mdata) :
@@ -1666,6 +1801,8 @@ def make_fp (iter_index,
         make_fp_cp2k(iter_index, jdata)
     elif fp_style == "pwmat" :
         make_fp_pwmat(iter_index, jdata)
+    elif fp_style == "amber" :
+        make_fp_amber(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1745,6 +1882,8 @@ def run_fp_inner (iter_index,
                   log_file = "fp.log",
                   forward_common_files=[]) :
     fp_command = mdata['fp_command']
+    if type(fp_command) is not list:
+        fp_command = [fp_command]
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
     mark_failure = fp_resources.get('mark_failure', False)
@@ -1764,7 +1903,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
     dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
     dispatcher.run_jobs(mdata['fp_resources'],
-                        [fp_command],
+                        fp_command,
                         work_path,
                         run_tasks,
                         fp_group_size,
@@ -1817,6 +1956,14 @@ def run_fp (iter_index,
         forward_files = ['atom.config', 'etot.input'] + fp_pp_files
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
+    elif fp_style == 'amber':
+        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'ptraj.in', 'rc.nc', 'convert_dpdata.py']
+        backward_files = [
+            'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
+            'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
+            'output', 'prod.nc', 'dataset'
+        ]
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -2155,6 +2302,40 @@ def post_fp_pwmat (iter_index,
     if reff>ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs")
 
+def post_fp_amber(iter_index, jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+    fp_params = jdata['fp_params']
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
+        sys_output.sort()
+        all_sys=dpdata.MultiSystems()
+        for idx,oo in enumerate(sys_output) :
+            sys_paths=glob.glob(os.path.join(oo,'dataset','*'))
+            for sys_path in sys_paths:
+                sys=dpdata.LabeledSystem(sys_path, fmt='deepmd/npy')
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = 999999)
+
 
 def post_fp (iter_index,
              jdata) :
@@ -2172,6 +2353,8 @@ def post_fp (iter_index,
         post_fp_cp2k(iter_index, jdata)
     elif fp_style == 'pwmat' :
         post_fp_pwmat(iter_index, jdata)
+    elif fp_style == 'amber' :
+        post_fp_amber(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj
