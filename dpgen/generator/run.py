@@ -764,6 +764,8 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
     
+    graph_idxs = cur_job.get('graphs', [0])
+    
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
@@ -778,29 +780,33 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
-            task_path = os.path.join(work_path, task_name)
-            # create task path
-            create_path(task_path)
-            create_path(os.path.join(task_path, 'traj'))
-            # link conf
-            loc_conf_name = 'init.rst7'
-            os.symlink(os.path.join(os.path.join('..','confs'), conf_name + ".rst7"),
-                       os.path.join(task_path, loc_conf_name) )
-            cwd_ = os.getcwd()
-            # chdir to task path
-            os.chdir(task_path)                
-            os.symlink(cur_job['mdin'], 'init.mdin')
-            os.symlink(cur_job['parm7'], 'qmmm.parm7')
-            r=jdata['r'][sys_counter][task_counter]
-            with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
-                fw.write(f.read().replace("RVAL", r))
+            for graph_idx in graph_idxs:
+                task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+                task_path = os.path.join(work_path, task_name)
+                # create task path
+                create_path(task_path)
+                create_path(os.path.join(task_path, 'traj'))
+                # link conf
+                loc_conf_name = 'init.rst7'
+                os.symlink(os.path.join(os.path.join('..','confs'), conf_name + ".rst7"),
+                        os.path.join(task_path, loc_conf_name) )
+                cwd_ = os.getcwd()
+                # chdir to task path
+                os.chdir(task_path)                
+                mdin=cur_job['mdin']
+                with open(mdin) as f, open('init.mdin', 'w') as fw:
+                    fw.write(f.read().replace("@GRAPH_FILE@", task_model_list[graph_idx]))
 
-            with open('job.json', 'w') as fp:
-                json.dump(cur_job, fp, indent = 4)
-            os.chdir(cwd_)
-            task_counter += 1
+                os.symlink(cur_job['parm7'], 'qmmm.parm7')
+                r=jdata['r'][sys_counter][conf_counter]
+                with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
+                    fw.write(f.read().replace("RVAL", r))
+
+                with open('job.json', 'w') as fp:
+                    json.dump(cur_job, fp, indent = 4)
+                os.chdir(cwd_)
+                task_counter += 1
             conf_counter += 1
         sys_counter += 1                    
     
@@ -1035,7 +1041,7 @@ def run_model_devi (iter_index,
     elif model_devi_style == 'amber':
         command = mdata['amber_command']
         forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
-        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo']
+        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
 
     commands = [command]
 
