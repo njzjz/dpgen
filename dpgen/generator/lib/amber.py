@@ -5,7 +5,6 @@ import numpy as np
 from tqdm import tqdm, trange
 import dpdata
 from collections import Counter
-from multiprocessing import Pool
 
 def GetSelectedAtomIndices(param, maskstr):
     sele = []
@@ -91,8 +90,7 @@ def get_amber_fp(cutoff, parmfile, nc, ll, hl, type_map, important_atoms=None):
         print(e)
         return ms
     nframes = data.enes.shape[0]
-    with Pool() as p:
-        for s in p.imap_unordered(data.get_data, trange(nframes)):
-            ms.append(s)
+    for s in map(data.get_data, trange(nframes)):
+        ms.append(s)
     return ms
     #ms.to_deepmd_npy(args.output, set_size=100000)
