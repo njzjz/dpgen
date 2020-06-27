@@ -1784,7 +1784,11 @@ ms.to_deepmd_npy("dataset",set_size=999999)
             os.symlink(os.path.relpath(os.path.join(cwd, tt, "rc.nc")), 'rc.nc')
             os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
             os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
-            os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
+            if 'parm7' in jdata['fp_params']:
+                parm7=jdata['fp_params']['parm7']
+            else:
+                parm7=jdata['parm7'][int(ss)]
+            os.symlink(parm7 ,'qmmm.parm7')
             os.symlink(jdata['fp_params']['ptrajin'] ,'ptraj.in')
             
             with open("convert_dpdata.py", 'w') as f:
