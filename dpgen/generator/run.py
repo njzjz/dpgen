@@ -798,7 +798,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 with open(mdin) as f, open('init.mdin', 'w') as fw:
                     fw.write(f.read().replace("@GRAPH_FILE@", task_model_list[graph_idx]))
 
-                if 'parm7' in curjob:
+                if 'parm7' in cur_job:
                     parm7=cur_job['parm7']
                 else:
                     parm7=jdata['parm7'][sys_counter]
