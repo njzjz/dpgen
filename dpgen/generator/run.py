@@ -801,9 +801,9 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 if 'parm7' in cur_job:
                     parm7=cur_job['parm7']
                 else:
-                    parm7=jdata['parm7'][sys_counter]
+                    parm7=jdata['parm7'][sys_idx[sys_counter]]
                 os.symlink(parm7, 'qmmm.parm7')
-                r=jdata['r'][sys_counter][conf_counter]
+                r=jdata['r'][sys_idx[sys_counter]][conf_counter]
                 with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
                     fw.write(f.read().replace("RVAL", r))
 
