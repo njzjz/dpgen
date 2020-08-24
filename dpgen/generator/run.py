@@ -1790,6 +1790,7 @@ ms.to_deepmd_npy("dataset",set_size=999999)
                 parm7=jdata['parm7'][int(ss)]
             os.symlink(parm7 ,'qmmm.parm7')
             os.symlink(jdata['fp_params']['ptrajin'] ,'ptraj.in')
+            create_path("dataset")
             
             with open("convert_dpdata.py", 'w') as f:
                 f.write(convert_py)
@@ -1973,7 +1974,7 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber':
-        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'ptraj.in', 'rc.nc', 'convert_dpdata.py']
+        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'ptraj.in', 'rc.nc', 'convert_dpdata.py', 'dataset']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
