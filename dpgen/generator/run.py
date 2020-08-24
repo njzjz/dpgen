@@ -803,8 +803,15 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                     parm7=jdata['parm7'][sys_idx[sys_counter]]
                 os.symlink(parm7, 'qmmm.parm7')
                 r=jdata['r'][sys_idx[sys_counter]][conf_counter]
+                if type(r) is not list:
+                    r = [r]
                 with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
-                    fw.write(f.read().replace("RVAL", r))
+                    tl = f.read()
+                    for ii, rr in enumerate(r):
+                        tl = tl.replace("RVAL"+str(ii+1), rr)
+                    if len(r) == 1:
+                        tl = tl.replace("RVAL", r[0])
+                    fw.write(tl)
 
                 with open('job.json', 'w') as fp:
                     json.dump(cur_job, fp, indent = 4)
