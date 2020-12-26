@@ -781,11 +781,11 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     deepmd_version = mdata['deepmd_version']
 
     sys_counter = 0
-    for ss in conf_systems:
+    for ii, ss in enumerate(conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            for ii in range(len(rev_mat)):
+            if True:
                 rev_item = rev_mat[ii]
                 task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                 conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
