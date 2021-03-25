@@ -16,16 +16,12 @@ def GetSelectedAtomIndices(param, maskstr):
 
 
 class DataContainer:
-    def __init__(self, parmfile, target, type_map, important_atoms=None, interactwith=None):
+    def __init__(self, parmfile, target, type_map, interactwith=None):
         self.parm = parmed.load_file(parmfile)
         self.parmfile = parmfile
         self.target = target
         self.interactwith = interactwith
         self.type_map = type_map
-        if important_atoms:
-            self.important_atoms=important_atoms
-        else:
-            self.important_atoms=[]
 
     def ReadFiles(self, nc, ll, hl):
         s_ll = dpdata.LabeledSystem(ll, fmt='amber/md', parm7_file=self.parmfile, nc_file=nc)
@@ -61,17 +57,13 @@ class DataContainer:
 
         numbs = [cou[n] for n in range(len(type_map))]
 
-        shape1, shape2, _ = crds.shape
-        atom_pref = np.ones((shape1, shape2))
-        atom_pref[:, self.important_atoms] = 5
-
         s = dpdata.LabeledSystem.from_dict({'data': {'atom_names': self.type_map, 'atom_types': types, 'coords': crds, 'forces': frcs,
-                                                    'energies': enes, 'cells': self.cells[iframe:iframe+1], 'atom_numbs': numbs, 'orig': [0, 0, 0], 'nopbc': True, "atom_pref": atom_pref}})
+                                                    'energies': enes, 'cells': self.cells[iframe:iframe+1], 'atom_numbs': numbs, 'orig': [0, 0, 0], 'nopbc': True}})
         return s
 
 
 
-def get_amber_fp(cutoff, parmfile, nc, ll, hl, type_map, important_atoms=None):
+def get_amber_fp(cutoff, parmfile, nc, ll, hl, type_map):
     target = ":1"
     # interactwith is set to all residues within 5 A
     # of the target, excluding the M-site particles
@@ -80,7 +72,6 @@ def get_amber_fp(cutoff, parmfile, nc, ll, hl, type_map, important_atoms=None):
     data = DataContainer(parmfile, ":1", 
         interactwith=interactwith,
         type_map=type_map,
-        important_atoms=important_atoms
     )
     ms = dpdata.MultiSystems()
     try:

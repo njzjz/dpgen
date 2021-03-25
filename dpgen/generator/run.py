@@ -1867,13 +1867,11 @@ ms = get_amber_fp(
     ll='low_level',
     hl='high_level',
     type_map={type_map},
-    important_atoms={important_atoms}, 
 )
 ms.to_deepmd_npy("dataset",set_size=999999)
 """.format(
     type_map=jdata['type_map'],
     cutoff=fp_params['cutoff'],
-    important_atoms=fp_params.get('important_atoms',None),
 )
 
     for ss in system_index :
