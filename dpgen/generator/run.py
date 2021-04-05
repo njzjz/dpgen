@@ -1158,7 +1158,47 @@ def run_model_devi (iter_index,
 def post_model_devi (iter_index,
                      jdata,
                      mdata) :
-    pass
+    model_devi_style = jdata.get('model_devi_style', 'lammps')
+    if model_devi_style == 'amber':
+        post_model_devi_amber(iter_index, jdata, mdata)
+
+def post_model_devi_amber(iter_index, jdata, mdata):
+    model_devi_group_size = mdata.get('post_model_devi_group_size', 1)
+    model_devi_resources = mdata['post_model_devi_resources']
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, model_devi_name)
+    assert(os.path.isdir(work_path))
+
+    all_task = glob.glob(os.path.join(work_path, "task.*"))
+    all_task.sort()
+
+    command = mdata['post_model_devi_command']
+    forward_files = ['rc.nc', "qmmm.parm7"]
+    backward_files = ['model_devi.out']
+
+    commands = [command]
+
+    run_tasks_ = all_task
+
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+
+    all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
+    model_names = [os.path.basename(ii) for ii in all_models]
+
+    cwd = os.getcwd()
+    dispatcher = make_dispatcher(mdata['post_model_devi_machine'], mdata['post_model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+    dispatcher.jrname = "jr_post.json"
+    dispatcher.run_jobs(mdata['post_model_devi_resources'],
+                        commands,
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files,
+                        outlog = 'post_model_devi.log',
+                        errlog = 'post_model_devi.log')
 
 
 def _to_face_dist(box_):
@@ -1245,7 +1285,11 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
-    cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
+    model_devi_style = jdata.get('model_devi_style', 'lammps')
+    if jdata.get('use_clusters', False) and model_devi_style == 'lammps':
+        cluster_cutoff = jdata['cluster_cutoff']
+    else:
+        cluster_cutoff = None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1342,9 +1386,15 @@ def _make_fp_vasp_inner (modd_path,
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
-            conf_name = os.path.join(tt, "traj")
-            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-            conf_name = os.path.abspath(conf_name)
+
+            if model_devi_style == 'lammps':
+                conf_name = os.path.join(tt, "traj")
+                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                conf_name = os.path.abspath(conf_name)
+            elif model_devi_style == "amber":
+                # amber
+                conf_name = os.path.abspath(os.path.join(tt, "rc.nc"))
+            
             if skip_bad_box is not None:
                 skip = check_bad_box(conf_name, skip_bad_box)
                 if skip:
@@ -1375,7 +1425,13 @@ def _make_fp_vasp_inner (modd_path,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
-                os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                if model_devi_style == 'lammps':
+                    os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                elif model_devi_style == "amber":
+                    # read and write with ase
+                    import ase.io
+                    image = ase.io.read(conf_name, index=ii, format="netcdftrajectory")
+                    ase.io.write('rc.nc', image, format="netcdftrajectory")
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
@@ -1387,7 +1443,7 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
         if count_bad_cluster > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
-    if cluster_cutoff is None:
+    if cluster_cutoff is None and model_devi_style == 'lammps':
         cwd = os.getcwd()
         for ii in fp_tasks:
             os.chdir(ii)
@@ -1841,69 +1897,34 @@ def make_fp_pwmat (iter_index,
 
 
 def make_fp_amber(iter_index, jdata):
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # make amber input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    create_path(work_path)
-    modd_path = os.path.join(iter_name, model_devi_name)
+    if 'user_fp_params' in jdata.keys() :
+        fp_params = jdata['user_fp_params']
+        user_input = True
+    else:
+        fp_params = jdata['fp_params']
+        user_input = False
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
 
-    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
-    modd_task.sort()
-    system_index = []
-    for ii in modd_task :
-        system_index.append(os.path.basename(ii).split('.')[1])
-    set_tmp = set(system_index)
-    system_index = list(set_tmp)
-    system_index.sort()
+        # link
+        os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
+        os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
+        if 'parm7' in jdata['fp_params']:
+            parm7=jdata['fp_params']['parm7']
+        else:
+            parm7=jdata['parm7'][int(ss)]
+        os.symlink(parm7 ,'qmmm.parm7')
+        create_path("dataset")
 
-    fp_tasks=[]
-    fp_params = jdata['fp_params']
-
-    convert_py="""
-from dpgen.generator.lib.amber import get_amber_fp
-ms = get_amber_fp(
-    cutoff={cutoff}, 
-    parmfile='qmmm.parm7',
-    nc='prod.nc',
-    ll='low_level',
-    hl='high_level',
-    type_map={type_map},
-)
-ms.to_deepmd_npy("dataset",set_size=999999)
-""".format(
-    type_map=jdata['type_map'],
-    cutoff=fp_params['cutoff'],
-)
-
-    for ss in system_index :
-        modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
-        modd_system_task = glob.glob(modd_system_glob)
-        modd_system_task.sort()
-
-        for cc, tt in enumerate(modd_system_task):
-            fp_task_name = make_fp_task_name(int(ss), cc)
-            fp_task_path = os.path.join(work_path, fp_task_name)
-            create_path(fp_task_path)
-            fp_tasks.append(fp_task_path)
-            cwd = os.getcwd()
-            os.chdir(fp_task_path)
-            
-            # link rc.nc
-            os.symlink(os.path.relpath(os.path.join(cwd, tt, "rc.nc")), 'rc.nc')
-            os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
-            os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
-            if 'parm7' in jdata['fp_params']:
-                parm7=jdata['fp_params']['parm7']
-            else:
-                parm7=jdata['parm7'][int(ss)]
-            os.symlink(parm7 ,'qmmm.parm7')
-            os.symlink(jdata['fp_params']['ptrajin'] ,'ptraj.in')
-            create_path("dataset")
-            
-            with open("convert_dpdata.py", 'w') as f:
-                f.write(convert_py)
-
-
-            os.chdir(cwd)
+        os.chdir(cwd)
     if len(fp_tasks) == 0 :
         return
 
@@ -2081,7 +2102,7 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber':
-        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'ptraj.in', 'rc.nc', 'convert_dpdata.py', 'dataset']
+        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'rc.nc', 'dataset']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
