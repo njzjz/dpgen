@@ -1394,7 +1394,7 @@ def _make_fp_vasp_inner (modd_path,
             elif model_devi_style == "amber":
                 # amber
                 conf_name = os.path.abspath(os.path.join(tt, "rc.nc"))
-            
+                rst_name = os.path.abspath(os.path.join(tt, "init.rst7"))
             if skip_bad_box is not None:
                 skip = check_bad_box(conf_name, skip_bad_box)
                 if skip:
@@ -1432,6 +1432,7 @@ def _make_fp_vasp_inner (modd_path,
                     import ase.io
                     image = ase.io.read(conf_name, index=ii, format="netcdftrajectory")
                     ase.io.write('rc.nc', image, format="netcdftrajectory")
+                    os.symlink(os.path.relpath(rst_name), 'init.rst7')
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
@@ -2102,7 +2103,7 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber':
-        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'rc.nc', 'dataset']
+        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'rc.nc', 'init.rst7', 'dataset']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
