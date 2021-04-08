@@ -26,6 +26,7 @@ import dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
+import scipy.io
 import paramiko
 from collections import Counter
 from distutils.version import LooseVersion
@@ -2107,7 +2108,7 @@ def run_fp (iter_index,
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
-            'output', 'prod.nc', 'dataset'
+            'output', 'dataset'
         ]
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output')
     else :
