@@ -26,7 +26,6 @@ import dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
-import scipy.io
 import paramiko
 from collections import Counter
 from distutils.version import LooseVersion
