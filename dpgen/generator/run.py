@@ -1372,7 +1372,7 @@ def _make_fp_vasp_inner (modd_path,
             numb_task = 0
         task_ratio = jdata["model_devi_jobs"][iter_index].get("task_ratio" ,1)
         if  task_ratio < 1:
-            numb_task *= task_ratio
+            numb_task = int(numb_task * task_ratio)
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
         count_bad_box = 0
