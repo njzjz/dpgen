@@ -828,7 +828,11 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 os.chdir(task_path)                
                 mdin=cur_job['mdin']
                 with open(mdin) as f, open('init.mdin', 'w') as fw:
-                    fw.write(f.read().replace("@GRAPH_FILE@", task_model_list[graph_idx]))
+                    mdin_str = f.read()
+                    tmp_model_list = [graph_idx] + [ii for ii in range(len(graph_idx)) if ii != graph_idx]
+                    for ii in tmp_model_list:
+                        mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, task_model_list[ii])
+                    fw.write(mdin_str)
 
                 if 'parm7' in cur_job:
                     parm7=cur_job['parm7']
@@ -1159,48 +1163,7 @@ def run_model_devi (iter_index,
 def post_model_devi (iter_index,
                      jdata,
                      mdata) :
-    model_devi_style = jdata.get('model_devi_style', 'lammps')
-    if model_devi_style == 'amber':
-        post_model_devi_amber(iter_index, jdata, mdata)
-
-def post_model_devi_amber(iter_index, jdata, mdata):
-    model_devi_group_size = mdata.get('post_model_devi_group_size', 1)
-    model_devi_resources = mdata['post_model_devi_resources']
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, model_devi_name)
-    assert(os.path.isdir(work_path))
-
-    all_task = glob.glob(os.path.join(work_path, "task.*"))
-    all_task.sort()
-
-    command = mdata['post_model_devi_command']
-    forward_files = ['rc.nc', "qmmm.parm7"]
-    backward_files = ['model_devi.out']
-
-    commands = [command]
-
-    run_tasks_ = all_task
-
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-
-    all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
-    model_names = [os.path.basename(ii) for ii in all_models]
-
-    cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['post_model_devi_machine'], mdata['post_model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-    dispatcher.jrname = "jr_post.json"
-    dispatcher.run_jobs(mdata['post_model_devi_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        model_devi_group_size,
-                        model_names,
-                        forward_files,
-                        backward_files,
-                        outlog = 'post_model_devi.log',
-                        errlog = 'post_model_devi.log')
-
+    pass
 
 def _to_face_dist(box_):
     box = np.reshape(box_, [3,3])
@@ -1267,7 +1230,9 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_max,
                          fp_link_files,
                          type_map,
-                         jdata):
+                         jdata,
+                         iter_index,
+                         ):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
@@ -1299,6 +1264,7 @@ def _make_fp_vasp_inner (modd_path,
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
     for ss in system_index :
         fp_candidate = []
+        model_devi_candidate = []
         if detailed_report_make_fp:
             fp_rest_accurate = []
             fp_rest_failed = []
@@ -1314,45 +1280,71 @@ def _make_fp_vasp_inner (modd_path,
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                for ii in range(all_conf.shape[0]) :
-                    if all_conf[ii][0] < model_devi_skip :
-                        continue
-                    cc = int(all_conf[ii][0])
-                    if cluster_cutoff is None:
-                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                if model_devi_style == "lammps":
+                    for ii in range(all_conf.shape[0]) :
+                        if all_conf[ii][0] < model_devi_skip :
+                            continue
+                        cc = int(all_conf[ii][0])
+                        if cluster_cutoff is None:
+                            if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
+                            (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
+                                fp_candidate.append([tt, cc])
+                                counter['candidate'] += 1
+                            elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                                if detailed_report_make_fp:
+                                    fp_rest_failed.append([tt, cc])
+                                counter['failed'] += 1
+                            elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                                if detailed_report_make_fp:
+                                    fp_rest_accurate.append([tt, cc])
+                                counter['accurate'] += 1
+                            else :
+                                raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                        else:
+                            idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
+                            for jj in idx_candidate:
+                                fp_candidate.append([tt, cc, jj])
+                            counter['candidate'] += len(idx_candidate)
+                            idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                             if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                                for jj in idx_rest_accurate:
+                                    fp_rest_accurate.append([tt, cc, jj])
+                            counter['accurate'] += len(idx_rest_accurate)
+                            idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
                             if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
-                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
-                    else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        for jj in idx_candidate:
-                            fp_candidate.append([tt, cc, jj])
-                        counter['candidate'] += len(idx_candidate)
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_accurate:
-                                fp_rest_accurate.append([tt, cc, jj])
-                        counter['accurate'] += len(idx_rest_accurate)
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_failed:
-                                fp_rest_failed.append([tt, cc, jj])
-                        counter['failed'] += len(idx_rest_failed)
+                                for jj in idx_rest_failed:
+                                    fp_rest_failed.append([tt, cc, jj])
+                            counter['failed'] += len(idx_rest_failed)
+                elif model_devi_style == "amber":
+                    with open(os.path.join(tt, "rc.mdout")) as f:
+                        cc = 0
+                        for line in f:
+                            if line.startswith("Active learning frame written with max. frc. std.:"):
+                                model_devi = float(line.split()[-2]) * 0.04336410390059322
+                                if model_devi < f_trust_lo:
+                                    # accurate
+                                    if detailed_report_make_fp:
+                                        fp_rest_accurate.append([tt, cc])
+                                    counter['accurate'] += 1
+                                elif model_devi > f_trust_hi:
+                                    # failed
+                                    if detailed_report_make_fp:
+                                        fp_rest_failed.append([tt, cc])
+                                    counter['failed'] += 1
+                                else:
+                                    # candidate
+                                    fp_candidate.append([tt, cc])
+                                    model_devi_candidate.append(all_conf[ii][4])
+                                    counter['candidate'] += 1
+                                cc += 1
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
             dlog.info("system {0:s} {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(ss, cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
-        random.shuffle(fp_candidate)
+        if jdata.get("sort_model_devi", False):
+            fp_candidate = [x for _,x in sorted(zip(model_devi_candidate, fp_candidate))]
+        else:
+            random.shuffle(fp_candidate)
         if detailed_report_make_fp:
             random.shuffle(fp_rest_failed)
             random.shuffle(fp_rest_accurate)
@@ -1379,6 +1371,9 @@ def _make_fp_vasp_inner (modd_path,
         numb_task = min(this_fp_task_max, len(fp_candidate))
         if (numb_task < fp_task_min):
             numb_task = 0
+        task_ratio = jdata["model_devi_jobs"][iter_index].get("task_ratio" ,1)
+        if  task_ratio < 1:
+            numb_task *= task_ratio
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
         count_bad_box = 0
@@ -1732,7 +1727,9 @@ def _make_fp_vasp_configs(iter_index,
                                    task_min, fp_task_max,
                                    [],
                                    type_map,
-                                   jdata)
+                                   jdata,
+                                   iter_index
+                                   )
     return fp_tasks
 
 def make_fp_vasp (iter_index,
