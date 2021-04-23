@@ -1251,10 +1251,7 @@ def _make_fp_vasp_inner (modd_path,
 
     fp_tasks = []
     model_devi_style = jdata.get('model_devi_style', 'lammps')
-    if jdata.get('use_clusters', False) and model_devi_style == 'lammps':
-        cluster_cutoff = jdata['cluster_cutoff']
-    else:
-        cluster_cutoff = None
+    cluster_cutoff = jdata.get('cluster_cutoff', None)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1288,6 +1285,7 @@ def _make_fp_vasp_inner (modd_path,
                             if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
                             (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                                 fp_candidate.append([tt, cc])
+                                model_devi_candidate.append(all_conf[ii][4])
                                 counter['candidate'] += 1
                             elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
                                 if detailed_report_make_fp:
