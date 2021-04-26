@@ -1275,7 +1275,7 @@ def _make_fp_vasp_inner (modd_path,
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                if model_devi_style == "lammps":
+                if os.path.isfile(os.path.join(tt, 'model_devi.out')):
                     all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
                     for ii in range(all_conf.shape[0]) :
                         if all_conf[ii][0] < model_devi_skip :
