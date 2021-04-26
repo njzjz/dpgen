@@ -1339,7 +1339,7 @@ def _make_fp_vasp_inner (modd_path,
         for cc_key, cc_value in counter.items():
             dlog.info("system {0:s} {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(ss, cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
         if jdata.get("sort_model_devi", False):
-            fp_candidate = [x for _,x in sorted(zip(model_devi_candidate, fp_candidate))]
+            fp_candidate = [x for _,x in sorted(zip(model_devi_candidate, fp_candidate), reverse=True)]
         else:
             random.shuffle(fp_candidate)
         if detailed_report_make_fp:
