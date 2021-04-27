@@ -26,7 +26,6 @@ import dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
-import paramiko
 from collections import Counter
 from distutils.version import LooseVersion
 from numpy.linalg  import norm
@@ -2623,21 +2622,12 @@ def run_iter (param_file, machine_file) :
             record_iter (record, ii, jj)
 
 
-def gen_run(args,retry=0) :
-    cwd = os.getcwd()
+def gen_run(args) :
     if args.PARAM and args.MACHINE:
         if args.debug:
             dlog.setLevel(logging.DEBUG)
         dlog.info ("start running")
-        try:
-            run_iter (args.PARAM, args.MACHINE)
-        except paramiko.ssh_exception.SSHException:
-            os.chdir(cwd)
-            if retry<5:
-                dlog.exception("SSH failed. Retry...")
-                gen_run(args, retry=retry+1)
-            else:
-                raise
+        run_iter (args.PARAM, args.MACHINE)
         dlog.info ("finished")
 
 
