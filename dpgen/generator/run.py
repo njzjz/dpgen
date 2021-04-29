@@ -1330,7 +1330,7 @@ def _make_fp_vasp_inner (modd_path,
                                 else:
                                     # candidate
                                     fp_candidate.append([tt, cc])
-                                    model_devi_candidate.append(all_conf[ii][4])
+                                    model_devi_candidate.append(model_devi)
                                     counter['candidate'] += 1
                                 cc += 1
         # print a report
