@@ -143,7 +143,7 @@ class Batch(object) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit 1\n\n'
-            if self.manual_cuda_devices > 0:
+            if self.manual_cuda_devices > 0 and not res.get('disable_cuda_env', False):
                 # set CUDA_VISIBLE_DEVICES
                 ret += 'export CUDA_VISIBLE_DEVICES=%d\n' % (self.cmd_cnt % self.manual_cuda_devices)
             ret += '{ if [ ! -f tag_%d_finished ] ;then\n' % idx
