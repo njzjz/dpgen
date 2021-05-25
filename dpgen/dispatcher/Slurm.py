@@ -34,6 +34,9 @@ class Slurm(Batch) :
         if 'task_max' in res and res['task_max'] > 0:
             if self._check_sub_limit(task_max=res['task_max']):
                 return
+        if 'partition_task_max' in res and res['partition_task_max'] > 0:
+            if self._check_sub_limit(task_max=res['partition_task_max'], partition=res['partition']):
+                return
         script_str = self.sub_script(job_dirs, cmd, args=args, res=res, outlog=outlog, errlog=errlog)
         self.context.write_file(self.sub_script_name, script_str)
         stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s %s' % (self.context.remote_root, 'sbatch', self.sub_script_name))
@@ -193,10 +196,13 @@ class Slurm(Batch) :
             return JobStatus.unknown                    
 
 
-    def _check_sub_limit(self, task_max, **kwarg) :
+    def _check_sub_limit(self, task_max, partition=None, **kwarg) :
         if task_max <= 0:
             return True
-        stdin, stdout, stderr = self.context.block_checkcall('squeue -u $USER -h')
+        command = 'squeue -u $USER -h'
+        if partition:
+            command += ' -p %s' % partition 
+        stdin, stdout, stderr = self.context.block_checkcall(command)
         nj = len(stdout.readlines())
         return nj >= task_max
 

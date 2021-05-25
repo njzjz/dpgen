@@ -228,6 +228,8 @@ class Dispatcher(object):
                         rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
+                elif status == JobStatus.unsubmitted:
+                    rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
         job_record.dump()
         return job_record.check_all_finished()
 
