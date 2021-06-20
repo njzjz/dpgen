@@ -1388,6 +1388,7 @@ def _make_fp_vasp_inner (modd_path,
         # make fp tasks
         count_bad_box = 0
         count_bad_cluster = 0
+        fp_candidate = sorted(fp_candidate[:numb_task])
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1435,9 +1436,20 @@ def _make_fp_vasp_inner (modd_path,
                     os.symlink(os.path.relpath(conf_name), 'conf.dump')
                 elif model_devi_style == "amber":
                     # read and write with ase
-                    import ase.io
-                    image = ase.io.read(conf_name, index=ii, format="netcdftrajectory")
-                    ase.io.write('rc.nc', image, format="netcdftrajectory")
+                    from ase.io.netcdftrajectory import NetCDFTrajectory, write_netcdftrajectory
+                    if cc > 0 and tt == fp_candidate[cc-1][0]:
+                        # same MD task, use the same file
+                        pass
+                    else:
+                        # not the same file
+                        if cc > 0:
+                            # close the old file
+                            netcdftraj.close()
+                        netcdftraj = NetCDFTrajectory(conf_name)
+                    write_netcdftrajectory('rc.nc', netcdftraj[ii])
+                    if cc >= numb_task - 1:
+                        netcdftraj.close()
+
                     os.symlink(os.path.relpath(rst_name), 'init.rst7')
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
