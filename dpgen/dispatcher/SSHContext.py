@@ -69,7 +69,8 @@ class SSHSession (object) :
         self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy)
         self.ssh.connect(hostname=hostname, port=port,
                          username=username, password=password,
-                         key_filename=key_filename, timeout=timeout, passphrase=passphrase)
+                         key_filename=key_filename, timeout=timeout, passphrase=passphrase,
+                         compress=True)
         assert(self.ssh.get_transport().is_active())
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)

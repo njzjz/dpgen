@@ -842,8 +842,8 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 with open(mdin) as f, open('init.mdin', 'w') as fw:
                     mdin_str = f.read()
                     tmp_model_list = [graph_idx] + [ii for ii in range(len(task_model_list)) if ii != graph_idx]
-                    for ii in tmp_model_list:
-                        mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, task_model_list[ii])
+                    for ii, jj in enumerate(tmp_model_list):
+                        mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, task_model_list[jj])
                     fw.write(mdin_str)
 
                 if 'parm7' in cur_job:
