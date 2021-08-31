@@ -1,8 +1,20 @@
 import os
 from pathlib import Path
 
+# format constants
 iteration_format = 'iter.%06d'
+iteration_pattern = 'iter.[0-9][0-9][0-9][0-9][0-9][0-9]'
 task_format = 'task.%06d'
+task_pattern = 'task.[0-9][0-9][0-9][0-9][0-9][0-9]'
+iterdata_format = 'data.%06d'
+iterdata_pattern = 'data.[0-9][0-9][0-9][0-9][0-9][0-9]'
+train_format = 'train.%03d'
+train_pattern = 'train.[0-9][0-9][0-9]'
+
+# steps in iterations
+step_train = '00.train'
+step_model_devi = '01.model_devi'
+step_fp = '02.fp'
 
 class Context(object):
     r"""The context of DP-GEN events.
@@ -16,7 +28,11 @@ class Context(object):
                  dpgen_path : str,
     ) -> None:
         # for example /path/to/dpgen
-        self.dpgen_path = Path(dpgen_path)
+        self._dpgen_path = Path(dpgen_path)
+
+    @property
+    def dpgen_path(self):
+        return self._dpgen_path
 
 
 class IterationContext(Context):
@@ -26,13 +42,30 @@ class IterationContext(Context):
     ) -> None:
         super().__init__(dpgen_path)
         # for example /path/to/dpgen/iter.000002
-        self.iter_path = self.dpgen_path / (iteration_format%iteration)
+        self._iter_path = self.dpgen_path / (iteration_format%iteration)
         # for example /path/to/dpgen/iter.000001
         if iteration > 0 :
-            self.prev_iter_path = self.dpgen_path / (iteration_format%(iteration-1))
+            self._prev_iter_path = self.dpgen_path / (iteration_format%(iteration-1))
         else:
-            self.prev_iter_path = None
+            self._prev_iter_path = None
         # for example /path/to/dpgen/iter.000003
-        self.next_iter_path = self.dpgen_path / (iteration_format%(iteration+1))
+        self._next_iter_path = self.dpgen_path / (iteration_format%(iteration+1))
         # for example [/path/to/dpgen/iter.000000, /path/to/dpgen/iter.000001]
-        self.all_prev_iter = [self.dpgen_path / (iteration_format % ii)) for ii in range(iteration)]
+        self._all_prev_iter = [self.dpgen_path / (iteration_format % ii) for ii in range(iteration)]
+
+    @property
+    def iter_path(self):
+        return self._iter_path
+
+    @property
+    def prev_iter_path(self):
+        return self._prev_iter_path
+
+    @property
+    def next_iter_path(self):
+        return self._next_iter_path
+
+    @property
+    def all_prev_iter(self):
+        return self._all_prev_iter
+

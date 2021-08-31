@@ -2,6 +2,7 @@ import abc,os
 from typing import List
 from abc import ABC
 from enum import Enum
+from pathlib import Path
 
 class Status(object):
     """The status of DP-GEN events
@@ -48,7 +49,7 @@ class OPIO(object):
             key,
     ):
         for jj in self._data[key]:
-            if not jj.exists()
+            if not jj.exists():
                 raise FileNotFoundError(f"{jj} does not exists")
 
 
@@ -73,9 +74,9 @@ class OP(ABC):
     def status(self):
         return self._status
     
-    @abc.abstractmethod
-    def get_work_path (self) -> None:
-        """Run the OP
+    @property
+    def work_path (self):
+        """The work path
         """
         raise NotImplementedError
 
