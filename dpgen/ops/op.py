@@ -22,7 +22,7 @@ class OPIO(object):
     def add(
             self,
             key : str,
-            path : List[str],
+            path : List[Path],
     )->None:
         """add a (key,path) pair. 
         
@@ -48,7 +48,7 @@ class OPIO(object):
             key,
     ):
         for jj in self._data[key]:
-            if not os.path.exists(jj):
+            if not jj.exists()
                 raise FileNotFoundError(f"{jj} does not exists")
 
 
