@@ -1,6 +1,7 @@
 import os,sys,pathlib,random,json
 from pathlib import Path
-from .op import OP, OPIO
+from .op import OP
+from .opio import DPData
 from .context import IterationContext, iteration_pattern, iterdata_pattern, train_pattern, step_fp, step_train, train_format
 from .utils import create_path, link_dp_data
 
@@ -24,12 +25,14 @@ class PrepDPTrain(OP):
             self,
             context : IterationContext,
             template_script : dict,
-            init_data : Path = None,
+            init_data : DPData = None,
+            iter_data : DPData = None,
             numb_models : int = 4,
     )->None:
         super().__init__(context)
         self.training_data_pattern = os.path.join(iteration_pattern, step_fp, iterdata_pattern)        
         self.init_data = init_data
+        self.iter_data = iter_data
         self.script = template_script
         self.numb_models = numb_models
 
@@ -41,11 +44,13 @@ class PrepDPTrain(OP):
     def _link_init_data(
             self,
     )->None:
+        if self.init_data is None:
+            return
         init_data_dir = self.work_path / 'init_data'
         if init_data_dir.exists():
             raise RuntimeError('init_data dir should not exists, something wrong')
         link_dp_data(
-            self.init_data, 
+            self.init_data.root_path, 
             init_data_dir, 
             link_abspath = True,
         )
@@ -53,11 +58,13 @@ class PrepDPTrain(OP):
     def _link_iter_data(
             self,
     )->None:
+        if self.iter_data is None:
+            return
         iter_data_dir = self.work_path / 'iter_data'
         if iter_data_dir.exists():
-            raise RuntimeError('iter_data dir should not exists, something wrong')        
+            raise RuntimeError('iter_data dir should not exists, something wrong')
         link_dp_data(
-            self.context.dpgen_path, 
+            self.iter_data.root_path, 
             iter_data_dir, 
             link_abspath = False, 
             data_path_pattern = os.path.join(iteration_pattern, 

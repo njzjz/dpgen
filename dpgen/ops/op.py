@@ -3,6 +3,7 @@ from typing import List
 from abc import ABC
 from enum import Enum
 from pathlib import Path
+from .opio import OPIO
 
 class Status(object):
     """The status of DP-GEN events
@@ -11,47 +12,6 @@ class Status(object):
     EXECUTED = 1
     ERROR = 2
     DIED = 3
-
-class OPIO(object):    
-    def __init__(
-            self,
-            context,
-    )->None:
-        self._context = context
-
-
-    def add(
-            self,
-            key : str,
-            path : List[Path],
-    )->None:
-        """add a (key,path) pair. 
-        
-        Parameters
-        ----------
-        key
-                the key
-        path
-                the paths to the location
-        """
-        self._data[key] = path
-        return self
-
-
-    def valid_all_path(
-            self,
-    ):
-        for ii in self._data.keys():
-            self.valid_path(ii)
-
-    def valid_path(
-            self,
-            key,
-    ):
-        for jj in self._data[key]:
-            if not jj.exists():
-                raise FileNotFoundError(f"{jj} does not exists")
-
 
 class OP(ABC):
     """The OP of DP-GEN. The OP is defined as an operation that has some

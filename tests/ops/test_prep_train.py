@@ -10,6 +10,8 @@ __package__ = 'ops'
 
 from dpgen.ops.context import IterationContext
 from dpgen.ops.prep_train import PrepDPTrain
+from dpgen.ops.opio import DPData
+
 
 template_script = \
 {
@@ -40,10 +42,11 @@ class TestLinkDataAbs(unittest.TestCase):
             ii.mkdir(parents=True)
             (ii/'type.raw').write_text(str(uuid.uuid4()))
         self.context = IterationContext('.', 2)
-        self.numb_models = 4
+        self.numb_models = 4        
         self.ptrain = PrepDPTrain(self.context,
                                   template_script,
-                                  'init',
+                                  DPData('init_data', Path('init')),
+                                  DPData('iter_data', Path('.')),
                                   self.numb_models,
         )
 
