@@ -4,6 +4,7 @@ from abc import ABC
 from enum import Enum
 from pathlib import Path
 from .opio import OPIO
+from .context import Context
 
 class Status(object):
     """The status of DP-GEN events
@@ -35,9 +36,7 @@ class OP(ABC):
     
     @property
     def work_path (self):
-        """The work path
-        """
-        raise NotImplementedError
+        return self._work_path
 
     @abc.abstractmethod
     def get_input(self) -> OPIO:
@@ -67,11 +66,31 @@ class OP(ABC):
         return decorator_set_status
 
 
+class StaticOP(OP):
+    """A DP-GEN OP. Know its input and output after initialization
+    """
+    def __init__(
+            self,
+            context : Context,
+            work_path : Path,
+            op_input : Set[Path],
+            op_output : Set[Path],
+    )->None:
+        super().__init__(context)
+        self._work_path = work_path
+        self._input = op_input
+        self._output = op_output
+        
+    def get_input(self) -> Set[Path]:
+        return self._input
+    
+    def get_output(self) -> Set[Path]:
+        return self._output
+
 
 class DynamicOP(OP):
     """A DP-GEN OP. Only know its input and output after the OP is executed.
     """
-    @OP.set_status(status = Status.INITED)
     def __init__(
             self,
             context,
