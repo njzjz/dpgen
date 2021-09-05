@@ -3,7 +3,7 @@ from pathlib import Path
 from .op import OP
 from .opio import OPIO,DPData
 from .context import IterationContext, iteration_pattern, iterdata_pattern, train_pattern, step_fp, step_train, train_format
-from .utils import create_path, link_dp_data
+from .utils import create_path, link_dp_data, link_dirs
 
 class PrepDPTrain(OP): 
     r"""This operator will do the following things:
@@ -49,8 +49,8 @@ class PrepDPTrain(OP):
         init_data_dir = self.work_path / 'init_data'
         if init_data_dir.exists():
             raise RuntimeError('init_data dir should not exists, something wrong')
-        link_dp_data(
-            self.init_data.root_path, 
+        link_dirs(
+            self.init_data.value,
             init_data_dir, 
             link_abspath = True,
         )
@@ -63,8 +63,8 @@ class PrepDPTrain(OP):
         iter_data_dir = self.work_path / 'iter_data'
         if iter_data_dir.exists():
             raise RuntimeError('iter_data dir should not exists, something wrong')
-        link_dp_data(
-            self.iter_data.root_path, 
+        link_dirs(
+            self.iter_data.value, 
             iter_data_dir, 
             link_abspath = False, 
             data_path_pattern = os.path.join(iteration_pattern, 

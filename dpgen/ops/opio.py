@@ -14,14 +14,14 @@ class OPIO(object):
         self._name = name
         self._paths = set({})
         for ii in paths:
-            self._paths.add(ii)
+            self._paths.add(Path(ii))
         
     @property
-    def name(self)->str:
+    def key(self)->str:
         return self._name
 
     @property
-    def values(self)->Set[Path]:
+    def value(self)->Set[Path]:
         return self._paths
 
     

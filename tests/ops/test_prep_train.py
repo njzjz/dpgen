@@ -10,7 +10,7 @@ __package__ = 'ops'
 
 from dpgen.ops.context import IterationContext
 from dpgen.ops.prep_train import PrepDPTrain
-from dpgen.ops.opio import DPData
+from dpgen.ops.opio import OPIO,DPData
 
 
 template_script = \
@@ -45,8 +45,8 @@ class TestLinkDataAbs(unittest.TestCase):
         self.numb_models = 4        
         self.ptrain = PrepDPTrain(self.context,
                                   template_script,
-                                  DPData('init_data', Path('init')),
-                                  DPData('iter_data', Path('.')),
+                                  OPIO('init_data', self.init_dirs),
+                                  OPIO('iter_data', self.iter_dirs),
                                   self.numb_models,
         )
 
@@ -64,7 +64,7 @@ class TestLinkDataAbs(unittest.TestCase):
         for ii in self.init_dirs:
             ss = ii
             for jj in range(self.numb_models):
-                tt = ii.replace('init', 'iter.000002/00.train/train.%03d/data/init_data' % jj)
+                tt = Path('iter.000002/00.train/train.%03d/data/init_data' % jj)/ii
                 self.assertEqual((Path(ss)/'type.raw').read_text(), 
                                  (Path(tt)/'type.raw').read_text())
         for ii in self.iter_dirs:
