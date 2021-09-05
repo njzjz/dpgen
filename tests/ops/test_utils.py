@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 __package__ = 'ops'
 
-from dpgen.ops.utils import os_path_split, link_dp_data
+from dpgen.ops.utils import os_path_split, link_dp_data, link_dirs
 
 
 class TestPathSplit(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestPathSplit(unittest.TestCase):
         bb = os_path_split(aa)
         self.assertEqual(bb, ['a', 'b', 'c', ''])
 
-class TestLinkDataAbs(unittest.TestCase):
+class TestLinkData(unittest.TestCase):
     def setUp(self):
         self.dirs = ['source/data0/subdata0', 'source/data0/subdata1', 'source/data1', 'source/foo/bar']
         all_data = [Path(ii) for ii in self.dirs]
@@ -74,6 +74,59 @@ class TestLinkDataAbs(unittest.TestCase):
         for ii in self.dirs[:-1]:
             ss = ii
             tt = ii.replace('source', 'target/target1')
+            self.assertEqual((Path(ss)/'type.raw').read_text(), 
+                             (Path(tt)/'type.raw').read_text())
+
+
+
+
+class TestLinkDirs(unittest.TestCase):
+    def setUp(self):
+        self.dirs = ['source/data0/subdata0', 'source/data0/subdata1', 'source/data1', 'source/foo/bar']
+        all_data = [Path(ii) for ii in self.dirs]
+        for ii in all_data:
+            ii.mkdir(parents=True)
+            (ii/'type.raw').write_text(str(uuid.uuid4()))
+
+    def tearDown(self):
+        shutil.rmtree('source')
+        shutil.rmtree('target')
+
+    def test_link_rel(self):
+        link_dirs(self.dirs, 'target', link_abspath = False)
+        for ii in self.dirs:
+            ss = ii
+            tt = Path('target')/ii
+            self.assertEqual((Path(ss)/'type.raw').read_text(), 
+                             (Path(tt)/'type.raw').read_text())
+
+    def test_link_abs(self):
+        link_dirs(self.dirs, 'target', link_abspath = True)
+        for ii in self.dirs:
+            ss = ii
+            tt = Path('target')/ii
+            self.assertEqual((Path(ss)/'type.raw').read_text(), 
+                             (Path(tt)/'type.raw').read_text())
+
+    def test_link_abs_1(self):
+        link_dirs(self.dirs, 'target/target1', link_abspath = False)
+        for ii in self.dirs:
+            ss = ii
+            tt = Path('target/target1')/ii
+            self.assertEqual((Path(ss)/'type.raw').read_text(), 
+                             (Path(tt)/'type.raw').read_text())
+
+    def test_link_abs_pattern(self):
+        link_dirs(self.dirs, 
+                  'target/target1', 
+                  link_abspath = False,
+                  data_path_pattern = '.*data.*'
+        )
+        for ii in Path('target').iterdir():
+            self.assertTrue('foo' not in str(ii))
+        for ii in self.dirs[:-1]:
+            ss = ii
+            tt = Path('target/target1')/ii
             self.assertEqual((Path(ss)/'type.raw').read_text(), 
                              (Path(tt)/'type.raw').read_text())
 
