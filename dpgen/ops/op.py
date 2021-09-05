@@ -1,5 +1,5 @@
-import abc,os
-from typing import List
+import abc,os,functools
+from typing import List,Set
 from abc import ABC
 from enum import Enum
 from pathlib import Path
@@ -11,7 +11,6 @@ class Status(object):
     INITED = 0
     EXECUTED = 1
     ERROR = 2
-    DIED = 3
 
 class OP(ABC):
     """The OP of DP-GEN. The OP is defined as an operation that has some
@@ -23,7 +22,7 @@ class OP(ABC):
     def __init__(
             self,
             context,
-    ):
+    )->None:
         self._context = context
 
     @property
@@ -57,6 +56,40 @@ class OP(ABC):
         """Run the OP
         """
         raise NotImplementedError
+
+    def set_status(status):
+        def decorator_set_status(func):
+            @functools.wraps(func)
+            def wrapper_set_status(self, *args, **kwargs):
+                func(self, *args, **kwargs)
+                self._status = status
+            return wrapper_set_status
+        return decorator_set_status
+
+
+
+class DynamicOP(OP):
+    """A DP-GEN OP. Only know its input and output after the OP is executed.
+    """
+    @OP.set_status(status = Status.INITED)
+    def __init__(
+            self,
+            context,
+            work_path,
+    )->None:
+        super().__init__(context)
+        self._work_path = work_path
+        self.opctrl = OPController(self)
+        
+    def get_input(self) -> Set[Path]:
+        if self.status is not Status.EXECUTED:
+            raise RuntimeError('Dynamic OP can only get input after it is executed.')
+        return self.opctrl.get_input()
+
+    def get_output(self) -> Set[Path]:
+        if self.status is not Status.EXECUTED:
+            raise RuntimeError('Dynamic OP can only get output after it is executed.')
+        return self.opctrl.get_output()
 
 
 class OPSet(ABC):
