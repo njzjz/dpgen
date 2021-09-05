@@ -1,7 +1,7 @@
 import os,sys,pathlib,random,json
 from pathlib import Path
 from .op import OP
-from .opio import DPData
+from .opio import OPIO,DPData
 from .context import IterationContext, iteration_pattern, iterdata_pattern, train_pattern, step_fp, step_train, train_format
 from .utils import create_path, link_dp_data
 
@@ -25,8 +25,8 @@ class PrepDPTrain(OP):
             self,
             context : IterationContext,
             template_script : dict,
-            init_data : DPData = None,
-            iter_data : DPData = None,
+            init_data : OPIO = None,
+            iter_data : OPIO = None,
             numb_models : int = 4,
     )->None:
         super().__init__(context)

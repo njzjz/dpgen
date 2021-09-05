@@ -1,7 +1,7 @@
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Set
 
 class OPIO(object):
     """Essentially a set of Path objects
@@ -21,7 +21,7 @@ class OPIO(object):
         return self._name
 
     @property
-    def values(self)->set:
+    def values(self)->Set[Path]:
         return self._paths
 
     
