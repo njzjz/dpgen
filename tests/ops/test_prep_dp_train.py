@@ -129,7 +129,7 @@ class TestPrepTrainNoIter(unittest.TestCase):
         )
 
     def tearDown(self):
-        dirs = ['init']
+        dirs = ['iter.000000', 'iter.000001', 'iter.000002', 'init']
         for ii in dirs:
             if Path(ii).is_dir():
                 shutil.rmtree(ii)

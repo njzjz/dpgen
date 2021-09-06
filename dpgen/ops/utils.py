@@ -9,7 +9,7 @@ def create_path (path) :
         dirname = path.name
         counter = 0
         while True :
-            bk_dirname = dirname + ".bk%03d" % counter
+            bk_dirname = Path(dirname + ".bk%03d" % counter)
             if not bk_dirname.is_dir():
                 path.replace(path.parent / bk_dirname)
                 break
