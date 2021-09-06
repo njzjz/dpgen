@@ -11,6 +11,7 @@ __package__ = 'ops'
 from dpgen.ops.context import IterationContext
 from dpgen.ops.prep_train import PrepDPTrain
 from dpgen.ops.opio import OPIO,DPData
+from dpgen.ops.op import Status
 
 
 template_script = \
@@ -50,6 +51,7 @@ class TestPrepTrain(unittest.TestCase):
                                   set([Path(ii) for ii in self.iter_dirs]),
                                   self.numb_models,
         )
+        self.assertEqual(self.ptrain.status, Status.INITED)
 
     def tearDown(self):
         dirs = ['iter.000000', 'iter.000001', 'iter.000002', 'init']
@@ -77,6 +79,7 @@ class TestPrepTrain(unittest.TestCase):
 
     def test_mk_train_data(self):
         self.ptrain.execute()
+        self.assertEqual(self.ptrain.status, Status.EXECUTED)
         for ii in self.init_dirs:
             ss = ii
             for jj in range(self.numb_models):
