@@ -1,7 +1,7 @@
 import os,sys,pathlib,random,json
 from pathlib import Path
 from typing import Set
-from .op import OP
+from .op import OP,Status
 from .opio import OPIO,DPData
 from .context import IterationContext, iteration_pattern, iterdata_pattern, train_pattern, step_fp, step_train, train_format
 from .utils import create_path, link_dp_data, link_dirs
@@ -31,6 +31,7 @@ class PrepDPTrain(OP):
     numb_models
                 number of models to be trained
     """
+    @OP.set_status(status = Status.INITED)
     def __init__(
             self,
             context : IterationContext,
@@ -89,8 +90,10 @@ class PrepDPTrain(OP):
             data_dir = train_dir / 'data'
             train_dir.mkdir()
             data_dir.mkdir()
-            (data_dir / 'init_data').symlink_to(Path('..')/'..'/'init_data')
-            (data_dir / 'iter_data').symlink_to(Path('..')/'..'/'iter_data')
+            if self.init_data:
+                (data_dir / 'init_data').symlink_to(Path('..')/'..'/'init_data')
+            if self.iter_data:
+                (data_dir / 'iter_data').symlink_to(Path('..')/'..'/'iter_data')
 
     def _make_train_script(self):
         for ii in range(self.numb_models):
@@ -126,6 +129,7 @@ class PrepDPTrain(OP):
     def work_path(self):
         return self.context.iter_path / step_train
 
+    @OP.set_status(status = Status.EXECUTED)
     def execute(self):
         # create path
         self._create_path()
