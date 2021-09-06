@@ -4,6 +4,7 @@ import numpy as np
 import unittest
 import uuid
 from pathlib import Path
+from mock import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 __package__ = 'ops'
@@ -34,6 +35,13 @@ template_script = \
     },
 }
 
+class faked_rg():
+    faked_random = -1
+    @classmethod
+    def randrange(cls,xx):
+        cls.faked_random += 1
+        return cls.faked_random
+
 class TestPrepTrain(unittest.TestCase):
     def setUp(self):
         self.iter_dirs = ['iter.000000/02.fp/data.000000', 'iter.000001/02.fp/data.000001']
@@ -59,8 +67,16 @@ class TestPrepTrain(unittest.TestCase):
             if Path(ii).is_dir():
                 shutil.rmtree(ii)
 
-    def test_mk_train_script(self):
-        pass
+    def test_train_script_rand_seed(self):
+        faked_rg.faked_random = -1
+        with mock.patch('random.randrange', faked_rg.randrange):
+            self.ptrain.execute()
+        for ii in range(self.numb_models):
+            with open(f'iter.{self.cur_iter:06d}/00.train/train.{ii:03d}/input.json') as fp:
+                jdata = json.load(fp)
+            self.assertEqual(jdata['model']['descriptor']['seed'], 3*ii+0)
+            self.assertEqual(jdata['model']['fitting_net']['seed'], 3*ii+1)
+            self.assertEqual(jdata['training']['seed'], 3*ii+2)
 
     def test_input(self):
         myinput = self.ptrain.get_input()
@@ -94,7 +110,6 @@ class TestPrepTrain(unittest.TestCase):
                                  (Path(tt)/'type.raw').read_text())
 
 
-
 class TestPrepTrainNoIter(unittest.TestCase):
     def setUp(self):
         self.iter_dirs = None
@@ -118,9 +133,6 @@ class TestPrepTrainNoIter(unittest.TestCase):
         for ii in dirs:
             if Path(ii).is_dir():
                 shutil.rmtree(ii)
-
-    def test_mk_train_script(self):
-        pass
 
     def test_input(self):
         myinput = self.ptrain.get_input()
@@ -170,9 +182,6 @@ class TestPrepTrainNoInit(unittest.TestCase):
         for ii in dirs:
             if Path(ii).is_dir():
                 shutil.rmtree(ii)
-
-    def test_mk_train_script(self):
-        pass
 
     def test_input(self):
         myinput = self.ptrain.get_input()
