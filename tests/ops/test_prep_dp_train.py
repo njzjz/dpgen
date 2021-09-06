@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 __package__ = 'ops'
 
 from dpgen.ops.context import IterationContext
-from dpgen.ops.prep_train import PrepDPTrain
+from dpgen.ops.prep_dp_train import PrepDPTrain
 from dpgen.ops.opio import OPIO,DPData
 from dpgen.ops.op import Status
 
