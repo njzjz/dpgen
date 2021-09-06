@@ -41,17 +41,17 @@ class IterationContext(Context):
                  iteration : int = 0,
     ) -> None:
         super().__init__(dpgen_path)
-        # for example /path/to/dpgen/iter.000002
-        self._iter_path = self.dpgen_path / (iteration_format%iteration)
-        # for example /path/to/dpgen/iter.000001
+        # for example iter.000002
+        self._iter_path = Path(iteration_format%iteration)
+        # for example iter.000001
         if iteration > 0 :
-            self._prev_iter_path = self.dpgen_path / (iteration_format%(iteration-1))
+            self._prev_iter_path = Path(iteration_format%(iteration-1))
         else:
             self._prev_iter_path = None
-        # for example /path/to/dpgen/iter.000003
-        self._next_iter_path = self.dpgen_path / (iteration_format%(iteration+1))
-        # for example [/path/to/dpgen/iter.000000, /path/to/dpgen/iter.000001]
-        self._all_prev_iter = [self.dpgen_path / (iteration_format % ii) for ii in range(iteration)]
+        # for example iter.000003
+        self._next_iter_path = Path(iteration_format%(iteration+1))
+        # for example [iter.000000, iter.000001]
+        self._all_prev_iter = [Path(iteration_format % ii) for ii in range(iteration)]
 
     @property
     def iter_path(self):
