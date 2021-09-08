@@ -32,12 +32,19 @@ class PrepMDLmpNative(OP):
                 The initial configurations
     models: Set[Path]
                 The models 
-    thermo : MDSettings
+    mdsett : MDSettings
                 The thermodynamic state of the lmp simulations
+    mass_map: List[float]
+                The mass of each type of atom, should match number of types in init_conf    
     append : bool
-                If there is a existing model deviation work dir, 
+                If there is a existing model deviation work path, 
                 do we append more tasks to it or
-                to backup it and generate a new work dir. 
+                to backup it and generate a new work path. 
+    conf_format : str
+                format of the configration files given in `init_conf`. 
+                by default automatically detected by `dpdata`.
+    shuffle_atoms : bool
+                shuffle atomic coords in the configuration
     """
     @OP.set_status(status = Status.INITED)
     def __init__(
