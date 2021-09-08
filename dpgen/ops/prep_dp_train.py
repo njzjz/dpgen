@@ -54,7 +54,7 @@ class PrepDPTrain(OP):
     def _create_path(
             self,
     )->None:
-        self.create_path(self.work_path)
+        OP.create_path(self.work_path)
 
     def _link_init_data(
             self,

@@ -93,6 +93,9 @@ class TestPrepTrain(unittest.TestCase):
         ref_dirs = [Path(ii) for ii in ref_dirs]
         self.assertEqual(myoutput['train_dirs'], set(ref_dirs))
 
+    def test_mk_train_input(self):
+        print('test_mk_train_input to be implemented!!!!')
+
     def test_mk_train_data(self):
         self.ptrain.execute()
         self.assertEqual(self.ptrain.status, Status.EXECUTED)
