@@ -1,13 +1,13 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import List
+from typing import List, Set
 from itertools import chain
 
 from dpdispatcher import Machine, Resources, Task, Submission
 
 from .op import OP, Status
 from .opio import OPIO
-from .context import IterationContext, task_pattern
+from .context import IterationContext
 
 
 class DispatcherOP(OP):
@@ -41,11 +41,6 @@ class DispatcherOP(OP):
     def command(self) -> str:
         """str: The full bash command produced by the command the user provides."""
         return self.user_command
-
-    @property
-    def task_pattern(self) -> str:
-        """str: task pateern for glob, e.g. `task.*`"""
-        return task_pattern
     
     @property
     def outlog(self) -> str:
@@ -57,49 +52,49 @@ class DispatcherOP(OP):
     
     @property
     @abstractmethod
-    def forward_files(self) -> List[str]:
+    def forward_files(self) -> Set[Path]:
         """List[str]: relative path to task path"""
 
     @property
     @abstractmethod
-    def backward_files(self) -> List[str]:
+    def backward_files(self) -> Set[Path]:
         """List[str]: relative path to task path"""
     
     @property
-    def forward_common_files(self) -> List[str]:
+    @classmethod
+    def forward_common_files(cls) -> Set[Path]:
         """List[str]: relative path to work path"""
-        return []
+        return set()
 
     @property
-    def backward_common_files(self) -> List[str]:
-        return []
+    @classmethod
+    def backward_common_files(cls) -> Set[Path]:
+        return set()
     
-    @property
-    def task_paths(self) -> List[Path]:
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError
-        return self.work_path.glob(self.task_pattern)
-    
-    def get_input(self) -> OPIO:
+    @classmethod
+    def get_static_input(cls) -> OPIO:
         return OPIO({
-            "task_forward_files": set(chain.from_iterable([[pp/ff for ff in self.forward_files] for pp in self.task_paths])),
-            "forward_common_files": set([self.work_path/ff for ff in self.forward_common_files])
+            "forward_common_files": cls.forward_common_files
         })
 
-    def get_ouput(self) -> OPIO:
+    @classmethod
+    def get_static_ouput(cls) -> OPIO:
         return OPIO({
-            "task_backward_files": set(chain.from_iterable([[pp/ff for ff in self.backward_files] for pp in self.task_paths])),
-            "backward_common_files": set([self.work_path/ff for ff in self.backward_common_files])
+            "backward_common_files": cls.backward_common_files
         })
 
     @OP.set_status(status = Status.EXECUTED)
-    def execute(self):
+    def execute(
+            self,
+            op_in : OPIO
+    ) -> OPIO:
+        task_paths = op_in["tasks"]
         tasks = []
 
-        for task_path in self.task_paths:
+        for task_path in task_paths:
             task = Task(
                 command=self.command, 
-                task_work_path=task_path,
+                task_work_path=str(task_path),
                 forward_files=self.forward_files,
                 backward_files=self.backward_files,
                 outlog=self.outlog,
@@ -116,3 +111,4 @@ class DispatcherOP(OP):
             backward_common_files=[]
         )
         submission.run_submission()
+        return op_in
