@@ -38,14 +38,16 @@ class OP(ABC):
     def work_path (self):
         return self._work_path
 
+    @staticmethod
     @abc.abstractmethod
-    def get_static_input(self) -> OPIO:
+    def get_static_input() -> OPIO:
         """Get a list of static input files
         """
         raise NotImplementedError
 
+    @staticmethod
     @abc.abstractmethod
-    def get_static_output(self) -> OPIO:
+    def get_static_output() -> OPIO:
         """Get a list of static ouput files
         """
         raise NotImplementedError
@@ -104,51 +106,6 @@ class OP(ABC):
             else :
                 OP._backup_path(path)
         path.mkdir(parents=True)
-
-
-class StaticOP(OP):
-    """A DP-GEN OP. Know its input and output after initialization
-    """
-    def __init__(
-            self,
-            context : Context,
-            work_path : Path,
-            op_input : Set[Path],
-            op_output : Set[Path],
-    )->None:
-        super().__init__(context)
-        self._work_path = work_path
-        self._input = op_input
-        self._output = op_output
-        
-    def get_input(self) -> Set[Path]:
-        return self._input
-    
-    def get_output(self) -> Set[Path]:
-        return self._output
-
-
-class DynamicOP(OP):
-    """A DP-GEN OP. Only know its input and output after the OP is executed.
-    """
-    def __init__(
-            self,
-            context,
-            work_path,
-    )->None:
-        super().__init__(context)
-        self._work_path = work_path
-        self.opctrl = OPController(self)
-        
-    def get_input(self) -> Set[Path]:
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError('Dynamic OP can only get input after it is executed.')
-        return self.opctrl.get_input()
-
-    def get_output(self) -> Set[Path]:
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError('Dynamic OP can only get output after it is executed.')
-        return self.opctrl.get_output()
 
 
 class OPSet(ABC):

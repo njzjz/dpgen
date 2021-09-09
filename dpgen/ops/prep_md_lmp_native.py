@@ -73,15 +73,13 @@ class PrepMDLmpNative(OP):
         return self.context.iter_path / step_model_devi
 
 
-    def get_static_input(self):
+    @staticmethod
+    def get_static_input():
         return None
     
-    def get_static_output(self):
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError('cannot get output before the OP is executed')
-        return OPIO({
-            "model_devi_dirs" : set(self.all_tasks)
-        })
+    @staticmethod
+    def get_static_output():
+        return None
 
     def _create_path(
             self,

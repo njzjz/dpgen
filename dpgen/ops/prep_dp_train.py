@@ -113,9 +113,11 @@ class PrepDPTrain(OP):
         with open(fname, 'w') as fp:
             json.dump(jtmp, fp, indent = 4)
 
+    @staticmethod
     def get_static_input(self):
         return None
 
+    @staticmethod
     def get_static_output(self):
         return None
 

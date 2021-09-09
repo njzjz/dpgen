@@ -18,21 +18,23 @@ class GetMaxMDLmp(OP):
     ):
         super().__init__(context)
         self._work_path = work_path
-        self.md_path = self.work_path / 'model_devi.out'
-        self.max_md_path = self.work_path / 'max_model_devi.out'
+        self.md_path = self.work_path / list(GetMaxMDLmp.get_static_input()['md_path'])[0]
+        self.max_md_path = self.work_path / list(GetMaxMDLmp.get_static_output()['max_md_path'])[0]
 
     @property
     def work_path(self):
         return self._work_path
 
-    def get_static_input(self):
+    @staticmethod
+    def get_static_input():
         return OPIO({ 
-            "md_path" : self.md_path,
+            "md_path" : set({Path('model_devi.out')}),
         })
     
-    def get_static_output(self):
+    @staticmethod
+    def get_static_output():
         return OPIO({ 
-            "max_md_path" : self.max_md_path
+            "max_md_path" : set({Path('max_model_devi.out')})
         })
     
     @OP.set_status(status = Status.EXECUTED)

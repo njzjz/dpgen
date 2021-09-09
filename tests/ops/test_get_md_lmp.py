@@ -45,14 +45,14 @@ class TestGetMaxMDLmp(unittest.TestCase):
         
     def test_static_input(self):
         myinput = self.gmd.get_static_input()
-        self.assertEqual(myinput._data, {'md_path' : self.work_path/'model_devi.out'})
+        self.assertEqual(myinput._data, {'md_path' : set({Path('model_devi.out')})})
 
     def test_static_output(self):
         myinput = self.gmd.get_static_output()
-        self.assertEqual(myinput._data, {'max_md_path' : self.work_path/'max_model_devi.out'})
+        self.assertEqual(myinput._data, {'max_md_path' : set({Path('max_model_devi.out')})})
 
     def test_exec(self):
         self.gmd.execute(None)
-        out = np.loadtxt(self.gmd.get_static_output()['max_md_path'])
+        out = np.loadtxt(self.gmd.work_path / list(self.gmd.get_static_output()['max_md_path'])[0])
         ref_out = np.array(self.ref_fo)
         np.testing.assert_almost_equal(out.ravel(), ref_out.ravel())
