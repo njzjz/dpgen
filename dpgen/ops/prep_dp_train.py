@@ -37,14 +37,10 @@ class PrepDPTrain(OP):
             self,
             context : IterationContext,
             template_script : dict,
-            init_data : Set[Path] = None,
-            iter_data : Set[Path] = None,
             numb_models : int = 4,
     )->None:
         super().__init__(context)
         self.training_data_pattern = os.path.join(iteration_pattern, step_fp, iterdata_pattern)        
-        self.init_data = init_data
-        self.iter_data = iter_data
         self.script = template_script
         self.numb_models = numb_models
         self.data_path_pattern = '.*'
@@ -86,8 +82,10 @@ class PrepDPTrain(OP):
         )
 
     def _make_train_dirs(self):
+        all_tasks = []
         for ii in range(self.numb_models):
             train_dir = self.work_path / (train_format % ii)
+            all_tasks.append(train_dir)
             data_dir = train_dir / 'data'
             train_dir.mkdir()
             data_dir.mkdir()
@@ -95,6 +93,7 @@ class PrepDPTrain(OP):
                 (data_dir / 'init_data').symlink_to(Path('..')/'..'/'init_data')
             if self.iter_data:
                 (data_dir / 'iter_data').symlink_to(Path('..')/'..'/'iter_data')
+        return all_tasks
 
     def _make_train_script(self):
         for ii in range(self.numb_models):
@@ -114,24 +113,23 @@ class PrepDPTrain(OP):
         with open(fname, 'w') as fp:
             json.dump(jtmp, fp, indent = 4)
 
-    def get_input(self):
-        my_input = OPIO( {'init_data' : self.init_data,
-                          'iter_data' : self.iter_data} )
-        return my_input
+    def get_static_input(self):
+        return None
 
-    def get_output(self):
-        my_output = OPIO( {'train_dirs' : set(()) } )
-        for ii in range(self.numb_models):
-            train_dir = self.work_path / (train_format % ii)
-            my_output['train_dirs'].add(train_dir)
-        return my_output
+    def get_static_output(self):
+        return None
 
     @property
     def work_path(self):
         return self.context.iter_path / step_train
 
     @OP.set_status(status = Status.EXECUTED)
-    def execute(self):
+    def execute(
+            self,
+            op_in : OPIO,
+    ) -> OPIO:
+        self.init_data = op_in['init_data']
+        self.iter_data = op_in['iter_data']
         # create path
         self._create_path()
         # link init data
@@ -139,9 +137,12 @@ class PrepDPTrain(OP):
         # link iter data
         self._link_iter_data()
         # mkdir 
-        self._make_train_dirs()
+        self.all_tasks = self._make_train_dirs()
         # make scripts 
         self._make_train_script()
+        return OPIO({
+            "train_dirs" : set(self.all_tasks)
+        })
 
 
 # if __name__ == '__main__':

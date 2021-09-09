@@ -50,8 +50,6 @@ class PrepMDLmpNative(OP):
     def __init__(
             self,
             context : IterationContext,
-            init_conf : Set[Path],
-            models : Set[Path],
             mdsett : MDSettings,
             mass_map : List[float],
             append : bool = False,
@@ -59,8 +57,6 @@ class PrepMDLmpNative(OP):
             shuffle_atoms : bool = False,
     )->None:
         super().__init__(context)
-        self.init_conf = init_conf
-        self.models = models
         self.append = append
         self.mdsett = mdsett
         self.shuffle_atoms = shuffle_atoms
@@ -77,13 +73,10 @@ class PrepMDLmpNative(OP):
         return self.context.iter_path / step_model_devi
 
 
-    def get_input(self):
-        return OPIO({ 
-            "init_conf" : self.init_conf,
-            "models" : self.models,
-        })
+    def get_static_input(self):
+        return None
     
-    def get_output(self):
+    def get_static_output(self):
         if self.status is not Status.EXECUTED:
             raise RuntimeError('cannot get output before the OP is executed')
         return OPIO({
@@ -240,7 +233,10 @@ class PrepMDLmpNative(OP):
     @OP.set_status(status = Status.EXECUTED)
     def execute(
             self,
-    ) -> None:        
+            op_in : OPIO,
+    ) -> OPIO:
+        self.init_conf = sorted(list(op_in['init_conf']))
+        self.models = sorted(list(op_in['models']))
         task_start_idx = self._task_start_idx()
         self.all_tasks = self._get_task_paths(task_start_idx)
         self._create_path()
@@ -248,5 +244,8 @@ class PrepMDLmpNative(OP):
         self._prepare_work_model_files()
         self._prepare_task_model_files()
         self._prepare_md_settings()
+        return OPIO({
+            "model_devi_dirs" : set(self.all_tasks)
+        })
         
         

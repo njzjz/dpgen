@@ -166,8 +166,6 @@ class TestPrepMDLmpNative(unittest.TestCase):
         self.context = IterationContext('.', self.cur_iter)
         self.pmd = PrepMDLmpNative(
             self.context,
-            self.init_conf,
-            self.models,
             self.mdsett,
             [27., 24.],
             append = False,
@@ -176,8 +174,6 @@ class TestPrepMDLmpNative(unittest.TestCase):
         )
         self.pmd_1 = PrepMDLmpNative(
             self.context,
-            self.init_conf,
-            self.models,
             self.mdsett,
             [27., 24.],
             append = True,
@@ -186,14 +182,16 @@ class TestPrepMDLmpNative(unittest.TestCase):
         )
         self.pmd_2 = PrepMDLmpNative(
             self.context,
-            self.init_conf,
-            self.models,
             self.mdsett,
             [27., 24.],
             append = False,
             conf_format = 'vasp/poscar',
             shuffle_atoms = True,
         )
+        self.input = OPIO({
+            'init_conf' : set(self.init_conf),
+            'models' : set(self.models),
+        })
 
         
     def tearDown(self):
@@ -203,14 +201,13 @@ class TestPrepMDLmpNative(unittest.TestCase):
                 shutil.rmtree(ii)
 
     def test_input(self):
-        myinput = self.pmd.get_input()
+        myinput = self.input
         self.assertEqual(set(myinput.keys()), set({'init_conf', 'models'}))
-        self.assertEqual(myinput['init_conf'], self.init_conf)
-        self.assertEqual(myinput['models'], self.models)
+        self.assertEqual(myinput['init_conf'], set(self.init_conf))
+        self.assertEqual(myinput['models'], set(self.models))
 
     def test_output(self):
-        self.pmd.execute()
-        myoutput = self.pmd.get_output()
+        myoutput = self.pmd.execute(self.input)
         self.assertEqual(set(myoutput.keys()), set({'model_devi_dirs'}))
         ref_dirs = []
         for ii in range(len(self.init_conf) * len(self.mdsett.temps) * len(self.mdsett.press)):
@@ -220,8 +217,7 @@ class TestPrepMDLmpNative(unittest.TestCase):
 
     def test_exec(self):
         with mock.patch('random.randrange', faked_rg.randrange):
-            self.pmd.execute()
-        myoutput = self.pmd.get_output()
+            myoutput = self.pmd.execute(self.input)
         all_tasks = myoutput['model_devi_dirs']
         self.assertEqual(self.pmd.status, Status.EXECUTED)
         # check content of conf file
@@ -248,9 +244,9 @@ class TestPrepMDLmpNative(unittest.TestCase):
 
     def test_exec_append(self):
         with mock.patch('random.randrange', faked_rg.randrange):
-            self.pmd.execute()
-            self.pmd_1.execute()
-        all_tasks = self.pmd_1.get_output()['model_devi_dirs']
+            self.pmd.execute(self.input)
+            myoutput = self.pmd_1.execute(self.input)
+        all_tasks = myoutput['model_devi_dirs']
         all_tasks = sorted([str(ii) for ii in all_tasks])
         ntasks = len(self.init_conf) * len(self.mdsett.temps) * len(self.mdsett.press)            
         ref_all_tasks = [f'iter.{self.cur_iter:06d}/01.model_devi/task.{ii+ntasks:06d}'
@@ -280,8 +276,8 @@ class TestPrepMDLmpNative(unittest.TestCase):
     def test_exec_shuffle(self):
         with mock.patch('random.randrange', faked_rg.randrange):
             with mock.patch('numpy.random.permutation', faked_rg_perm.permutation):
-                self.pmd_2.execute()
-        all_tasks = self.pmd_2.get_output()['model_devi_dirs']
+                myoutput = self.pmd_2.execute(self.input)
+        all_tasks = myoutput['model_devi_dirs']
         all_tasks = sorted([str(ii) for ii in all_tasks])
         ntasks = len(self.init_conf) * len(self.mdsett.temps) * len(self.mdsett.press)            
         ref_all_tasks = [f'iter.{self.cur_iter:06d}/01.model_devi/task.{ii:06d}'

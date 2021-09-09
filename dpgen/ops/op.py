@@ -39,19 +39,22 @@ class OP(ABC):
         return self._work_path
 
     @abc.abstractmethod
-    def get_input(self) -> OPIO:
-        """Get a list of input files
+    def get_static_input(self) -> OPIO:
+        """Get a list of static input files
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_output(self) -> OPIO:
-        """Get a list of ouput files
+    def get_static_output(self) -> OPIO:
+        """Get a list of static ouput files
         """
         raise NotImplementedError
     
     @abc.abstractmethod
-    def execute (self) -> None:
+    def execute (
+            self,
+            op_in : OPIO,
+    ) -> OPIO:
         """Run the OP
         """
         raise NotImplementedError
@@ -60,8 +63,9 @@ class OP(ABC):
         def decorator_set_status(func):
             @functools.wraps(func)
             def wrapper_set_status(self, *args, **kwargs):
-                func(self, *args, **kwargs)
+                ret = func(self, *args, **kwargs)
                 self._status = status
+                return ret
             return wrapper_set_status
         return decorator_set_status
 
