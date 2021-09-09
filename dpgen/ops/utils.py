@@ -2,22 +2,6 @@ import os,re
 from pathlib import Path
 from typing import Iterable
 
-def create_path (path) :
-    """Create path. If path exists, it will moved to path.bk%03d.    
-    """
-    if path.is_dir() : 
-        dirname = path.name
-        counter = 0
-        while True :
-            bk_dirname = Path(dirname + ".bk%03d" % counter)
-            if not bk_dirname.is_dir():
-                path.replace(path.parent / bk_dirname)
-                break
-            counter += 1
-        (path.parent / dirname).mkdir(parents=True)
-    path.mkdir(parents=True)
-
-
 def os_path_split(path):
     """split a path, for example: 'a/b/c' -> ['a', 'b', 'c']    
     """

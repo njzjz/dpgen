@@ -38,20 +38,25 @@ class OP(ABC):
     def work_path (self):
         return self._work_path
 
+    @staticmethod
     @abc.abstractmethod
-    def get_input(self) -> OPIO:
-        """Get a list of input files
+    def get_static_input() -> OPIO:
+        """Get a list of static input files
         """
         raise NotImplementedError
 
+    @staticmethod
     @abc.abstractmethod
-    def get_output(self) -> OPIO:
-        """Get a list of ouput files
+    def get_static_output() -> OPIO:
+        """Get a list of static ouput files
         """
         raise NotImplementedError
     
     @abc.abstractmethod
-    def execute (self) -> None:
+    def execute (
+            self,
+            op_in : OPIO,
+    ) -> OPIO:
         """Run the OP
         """
         raise NotImplementedError
@@ -60,55 +65,47 @@ class OP(ABC):
         def decorator_set_status(func):
             @functools.wraps(func)
             def wrapper_set_status(self, *args, **kwargs):
-                func(self, *args, **kwargs)
+                ret = func(self, *args, **kwargs)
                 self._status = status
+                return ret
             return wrapper_set_status
         return decorator_set_status
 
 
-class StaticOP(OP):
-    """A DP-GEN OP. Know its input and output after initialization
-    """
-    def __init__(
-            self,
-            context : Context,
-            work_path : Path,
-            op_input : Set[Path],
-            op_output : Set[Path],
-    )->None:
-        super().__init__(context)
-        self._work_path = work_path
-        self._input = op_input
-        self._output = op_output
-        
-    def get_input(self) -> Set[Path]:
-        return self._input
-    
-    def get_output(self) -> Set[Path]:
-        return self._output
+    @staticmethod
+    def _backup_path(path):
+        if path.is_dir() : 
+            dirname = path.name
+            counter = 0
+            while True :
+                bk_dirname = Path(dirname + ".bk%03d" % counter)
+                if not bk_dirname.is_dir():
+                    path.replace(path.parent / bk_dirname)
+                    break
+                counter += 1
+            (path.parent / dirname).mkdir(parents=True)
 
+    @staticmethod
+    def create_path (
+            path : Path,
+            exists_ok : bool = False,
+    ) -> None :
+        """Create path. 
 
-class DynamicOP(OP):
-    """A DP-GEN OP. Only know its input and output after the OP is executed.
-    """
-    def __init__(
-            self,
-            context,
-            work_path,
-    )->None:
-        super().__init__(context)
-        self._work_path = work_path
-        self.opctrl = OPController(self)
-        
-    def get_input(self) -> Set[Path]:
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError('Dynamic OP can only get input after it is executed.')
-        return self.opctrl.get_input()
-
-    def get_output(self) -> Set[Path]:
-        if self.status is not Status.EXECUTED:
-            raise RuntimeError('Dynamic OP can only get output after it is executed.')
-        return self.opctrl.get_output()
+        Parameters
+        ----------
+        path
+                The path to be created
+        exists_ok
+                If True, then do nothing if path exists
+                Otherwise if path exists, it will be backuped to path.bk%03d.    
+        """
+        if path.is_dir() :
+            if exists_ok :
+                return
+            else :
+                OP._backup_path(path)
+        path.mkdir(parents=True)
 
 
 class OPSet(ABC):

@@ -55,11 +55,13 @@ class TestPrepTrain(unittest.TestCase):
         self.numb_models = 4        
         self.ptrain = PrepDPTrain(self.context,
                                   template_script,
-                                  set([Path(ii) for ii in self.init_dirs]),
-                                  set([Path(ii) for ii in self.iter_dirs]),
                                   self.numb_models,
         )
         self.assertEqual(self.ptrain.status, Status.INITED)
+        self.input = OPIO({
+            'init_data' : set([Path(ii) for ii in self.init_dirs]),
+            'iter_data' : set([Path(ii) for ii in self.iter_dirs]),
+        })
 
     def tearDown(self):
         dirs = ['iter.000000', 'iter.000001', 'iter.000002', 'init']
@@ -70,7 +72,7 @@ class TestPrepTrain(unittest.TestCase):
     def test_train_script_rand_seed(self):
         faked_rg.faked_random = -1
         with mock.patch('random.randrange', faked_rg.randrange):
-            self.ptrain.execute()
+            self.ptrain.execute(self.input)
         for ii in range(self.numb_models):
             with open(f'iter.{self.cur_iter:06d}/00.train/train.{ii:03d}/input.json') as fp:
                 jdata = json.load(fp)
@@ -79,13 +81,13 @@ class TestPrepTrain(unittest.TestCase):
             self.assertEqual(jdata['training']['seed'], 3*ii+2)
 
     def test_input(self):
-        myinput = self.ptrain.get_input()
+        myinput = self.input
         self.assertEqual(set(myinput.keys()), set({'init_data', 'iter_data'}))
         self.assertEqual(myinput['init_data'], set((Path(ii) for ii in self.init_dirs)))
         self.assertEqual(myinput['iter_data'], set((Path(ii) for ii in self.iter_dirs)))
 
     def test_output(self):
-        myoutput = self.ptrain.get_output()
+        myoutput = self.ptrain.execute(self.input)
         self.assertEqual(set(myoutput.keys()), set({'train_dirs'}))
         ref_dirs = []
         for ii in range(self.numb_models):
@@ -93,8 +95,11 @@ class TestPrepTrain(unittest.TestCase):
         ref_dirs = [Path(ii) for ii in ref_dirs]
         self.assertEqual(myoutput['train_dirs'], set(ref_dirs))
 
+    def test_mk_train_input(self):
+        print('test_mk_train_input to be implemented!!!!')
+
     def test_mk_train_data(self):
-        self.ptrain.execute()
+        self.ptrain.execute(self.input)
         self.assertEqual(self.ptrain.status, Status.EXECUTED)
         for ii in self.init_dirs:
             ss = ii
@@ -123,10 +128,12 @@ class TestPrepTrainNoIter(unittest.TestCase):
         self.numb_models = 4        
         self.ptrain = PrepDPTrain(self.context,
                                   template_script,
-                                  set([Path(ii) for ii in self.init_dirs]),
-                                  None,
                                   self.numb_models,
         )
+        self.input = OPIO({
+            'init_data' : set([Path(ii) for ii in self.init_dirs]),
+            'iter_data' : None
+        })
 
     def tearDown(self):
         dirs = ['iter.000000', 'iter.000001', 'iter.000002', 'init']
@@ -135,13 +142,13 @@ class TestPrepTrainNoIter(unittest.TestCase):
                 shutil.rmtree(ii)
 
     def test_input(self):
-        myinput = self.ptrain.get_input()
+        myinput = self.input
         self.assertEqual(set(myinput.keys()), set({'init_data', 'iter_data'}))
         self.assertEqual(myinput['init_data'], set((Path(ii) for ii in self.init_dirs)))
         self.assertEqual(myinput['iter_data'], None)
 
     def test_output(self):
-        myoutput = self.ptrain.get_output()
+        myoutput = self.ptrain.execute(self.input)
         self.assertEqual(set(myoutput.keys()), set({'train_dirs'}))
         ref_dirs = []
         for ii in range(self.numb_models):
@@ -150,7 +157,7 @@ class TestPrepTrainNoIter(unittest.TestCase):
         self.assertEqual(myoutput['train_dirs'], set(ref_dirs))
 
     def test_mk_train_data(self):
-        self.ptrain.execute()
+        self.ptrain.execute(self.input)
         for ii in self.init_dirs:
             ss = ii
             for jj in range(self.numb_models):
@@ -172,10 +179,12 @@ class TestPrepTrainNoInit(unittest.TestCase):
         self.numb_models = 4        
         self.ptrain = PrepDPTrain(self.context,
                                   template_script,
-                                  None,
-                                  set([Path(ii) for ii in self.iter_dirs]),
                                   self.numb_models,
         )
+        self.input = OPIO({
+            'init_data' : None,
+            'iter_data' : set([Path(ii) for ii in self.iter_dirs]),
+        })
 
     def tearDown(self):
         dirs = ['iter.000000', 'iter.000001', 'iter.000002']
@@ -184,13 +193,13 @@ class TestPrepTrainNoInit(unittest.TestCase):
                 shutil.rmtree(ii)
 
     def test_input(self):
-        myinput = self.ptrain.get_input()
+        myinput = self.input
         self.assertEqual(set(myinput.keys()), set({'init_data', 'iter_data'}))
         self.assertEqual(myinput['init_data'], None)
         self.assertEqual(myinput['iter_data'], set((Path(ii) for ii in self.iter_dirs)))
 
     def test_output(self):
-        myoutput = self.ptrain.get_output()
+        myoutput = self.ptrain.execute(self.input)
         self.assertEqual(set(myoutput.keys()), set({'train_dirs'}))
         ref_dirs = []
         for ii in range(self.numb_models):
@@ -199,7 +208,7 @@ class TestPrepTrainNoInit(unittest.TestCase):
         self.assertEqual(myoutput['train_dirs'], set(ref_dirs))
 
     def test_mk_train_data(self):
-        self.ptrain.execute()
+        self.ptrain.execute(self.input)
         for ii in self.iter_dirs:
             ss = ii
             for jj in range(self.numb_models):

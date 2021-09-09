@@ -32,7 +32,8 @@ def make_lammps_input(ensemble,
                       ele_temp_a = None,
                       max_seed = 1000000,
                       nopbc = False,
-                      deepmd_version = '0.1') :
+                      deepmd_version = '0.1', 
+                      trj_seperate_files = True) :
     if (ele_temp_f is not None or ele_temp_a is not None) and LooseVersion(deepmd_version) < LooseVersion('1'):
         raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
     if ele_temp_f is not None and ele_temp_a is not None:
@@ -89,7 +90,10 @@ def make_lammps_input(ensemble,
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
-    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
+    if trj_seperate_files:        
+        ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
+    else:
+        ret+= "dump            1 all custom ${DUMP_FREQ} dump.traj id type x y z fx fy fz\n"
     ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
