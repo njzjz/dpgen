@@ -95,10 +95,10 @@ class DispatcherOP(OP):
             task = Task(
                 command=self.command, 
                 task_work_path=str(task_path),
-                forward_files=self.forward_files,
-                backward_files=self.backward_files,
+                forward_files=self.path_to_str(self.forward_files),
+                backward_files=self.path_to_str(self.backward_files),
                 outlog=self.outlog,
-                errlog=self.errlog
+                errlog=self.errlog,
             )
             tasks.append(task)
 
@@ -107,8 +107,12 @@ class DispatcherOP(OP):
             machine=self.machine,
             resources=self.resources,
             task_list=tasks,
-            forward_common_files=self.forward_common_files,
-            backward_common_files=[]
+            forward_common_files=self.path_to_str(self.forward_common_files),
+            backward_common_files=self.path_to_str(self.backward_common_files),
         )
         submission.run_submission()
         return op_in
+
+    @classmethod
+    def path_to_str(cls, paths: List[Path]) -> List[str]:
+        return list([str(path) for path in paths])
