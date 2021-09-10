@@ -38,16 +38,16 @@ class OP(ABC):
     def work_path (self):
         return self._work_path
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def get_static_input() -> OPIO:
+    def get_static_input(cls) -> OPIO:
         """Get a list of static input files
         """
         raise NotImplementedError
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def get_static_output() -> OPIO:
+    def get_static_output(cls) -> OPIO:
         """Get a list of static ouput files
         """
         raise NotImplementedError

@@ -1,13 +1,12 @@
 from abc import abstractmethod
 from pathlib import Path
 from typing import List, Set
-from itertools import chain
 
 from dpdispatcher import Machine, Resources, Task, Submission
 
 from .op import OP, Status
 from .opio import OPIO
-from .context import IterationContext
+from .context import Context
 
 
 class DispatcherOP(OP):
@@ -17,9 +16,9 @@ class DispatcherOP(OP):
     ----------
     context : IterationContext
         DP-GEN iteration context
-    machine : dict
+    machine : Machine
         DPDispatcher machine parameters. See also DPDispatcher doc.
-    resources : dict
+    resources : Resources
         DPDispatcher machine parameters. See also DPDispatcher doc.
     command : str
         path or command to a certain program on remote
@@ -27,14 +26,14 @@ class DispatcherOP(OP):
     @OP.set_status(status = Status.INITED)
     def __init__(
             self,
-            context: IterationContext,
-            machine: dict,
-            resources: dict,
+            context: Context,
+            machine: Machine,
+            resources: Resources,
             command: str,
     )->None:
         super().__init__(context)
-        self.machine = Machine(**machine)
-        self.resources = Resources(**resources)
+        self.machine = machine
+        self.resources = resources
         self.user_command = command
     
     @property

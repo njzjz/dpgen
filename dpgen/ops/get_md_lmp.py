@@ -25,14 +25,14 @@ class GetMaxMDLmp(OP):
     def work_path(self):
         return self._work_path
 
-    @staticmethod
-    def get_static_input():
+    @classmethod
+    def get_static_input(cls):
         return OPIO({ 
             "md_path" : set({Path('model_devi.out')}),
         })
     
-    @staticmethod
-    def get_static_output():
+    @classmethod
+    def get_static_output(cls):
         return OPIO({ 
             "max_md_path" : set({Path('max_model_devi.out')})
         })
