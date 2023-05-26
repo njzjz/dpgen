@@ -34,6 +34,7 @@ dependencies = [
     'pymatgen-analysis-defects',
     'openbabel-wheel',
     'packaging',
+    'typing_extensions; python_version < "3.9"',
 ]
 requires-python = ">=3.8"
 readme = "README.md"
