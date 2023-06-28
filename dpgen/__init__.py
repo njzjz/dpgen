@@ -1,6 +1,8 @@
 import logging
 import os
 
+import dpamber.aparam  # noqa: F401
+
 ROOT_PATH = __path__[0]
 NAME = "dpgen"
 SHORT_CMD = "dpgen"
