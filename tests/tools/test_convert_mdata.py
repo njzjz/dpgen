@@ -1,17 +1,21 @@
-import os,sys,json
+import os
+import sys
 import unittest
 
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-sys.path.insert(0, os.path.join(test_dir, '..'))
-__package__ = 'tools'
+sys.path.insert(0, os.path.join(test_dir, ".."))
+__package__ = "tools"
 from dpgen.remote.decide_machine import convert_mdata
-from .context import setUpModule
+from dpgen.util import load_file
+
+from .context import setUpModule  # noqa: F401
+
 
 class TestConvertMdata(unittest.TestCase):
-    machine_file = 'machine_fp_single.json'
+    machine_file = "machine_fp_single.json"
 
-    def test_convert_mdata (self):
-        mdata = json.load(open(self.machine_file))
+    def test_convert_mdata(self):
+        mdata = load_file(self.machine_file)
         mdata = convert_mdata(mdata, ["fp"])
         self.assertEqual(mdata["fp_command"], "vasp_std")
         self.assertEqual(mdata["fp_group_size"], 8)
@@ -20,4 +24,4 @@ class TestConvertMdata(unittest.TestCase):
 
 
 class TestConvertMdata2(TestConvertMdata):
-    machine_file = 'machine_fp_single2.json'
+    machine_file = "machine_fp_single2.json"

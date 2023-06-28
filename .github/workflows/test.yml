@@ -10,7 +10,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9]
-        PYMATGEN_VERSION: [2022.7.19]
 
     steps:
     - uses: actions/checkout@v2
@@ -19,12 +18,17 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage pymatgen==${{ matrix.PYMATGEN_VERSION }} -e .
+      # See https://github.com/materialsproject/api/issues/809
+      run: pip install coverage pymatgen==2023.5.31 -e . 'mp-api<0.33; python_version < "3.9"'
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v3
   pass:
     needs: [build]
     runs-on: ubuntu-latest
+    if: always()
     steps:
-      - run: echo "All jobs passed"
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}
