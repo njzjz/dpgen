@@ -538,7 +538,14 @@ def make_train(iter_index, jdata, mdata):
             mdata["deepmd_version"]
         ) < Version("3"):
             # 1.x
-            if jinput["model"]["descriptor"]["type"] == "hybrid":
+            if jinput["model"].get("type") == "pairwise_dprc":
+                jinput["model"]["qm_model"]["descriptor"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
+                jinput["model"]["qmmm_model"]["descriptor"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
+            elif jinput["model"]["descriptor"]["type"] == "hybrid":
                 for desc in jinput["model"]["descriptor"]["list"]:
                     desc["seed"] = random.randrange(sys.maxsize) % (2**32)
             elif jinput["model"]["descriptor"]["type"] == "loc_frame":
@@ -547,9 +554,17 @@ def make_train(iter_index, jdata, mdata):
                 jinput["model"]["descriptor"]["seed"] = random.randrange(
                     sys.maxsize
                 ) % (2**32)
-            jinput["model"]["fitting_net"]["seed"] = random.randrange(sys.maxsize) % (
-                2**32
-            )
+            if jinput["model"].get("type") == "pairwise_dprc":
+                jinput["model"]["qm_model"]["fitting_net"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
+                jinput["model"]["qmmm_model"]["fitting_net"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
+            else:
+                jinput["model"]["fitting_net"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
             if "type_embedding" in jinput["model"]:
                 jinput["model"]["type_embedding"]["seed"] = random.randrange(
                     sys.maxsize
