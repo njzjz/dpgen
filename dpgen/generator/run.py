@@ -24,7 +24,6 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import List
 
 import dpdata
 import numpy as np
@@ -301,7 +300,7 @@ def make_train(iter_index, jdata, mdata):
             )
         dlog.info(
             "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
-            training_reuse_iter,
+            new_to_old_ratio,
         )
         auto_ratio = True
         number_old_frames = 0
@@ -401,11 +400,11 @@ def make_train(iter_index, jdata, mdata):
                     nframes += dpdata.LabeledSystem(
                         sys_single, fmt="deepmd/npy"
                     ).get_nframes()
-                    if auto_ratio:
-                        if ii == iter_index - 1:
-                            number_new_frames += nframes
-                        else:
-                            number_old_frames += nframes
+                if auto_ratio:
+                    if ii == iter_index - 1:
+                        number_new_frames += nframes
+                    else:
+                        number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
                         "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
@@ -2104,7 +2103,7 @@ def _read_model_devi_file(
 
 
 def _select_by_model_devi_standard(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_lo: float,
     f_trust_hi: float,
     v_trust_lo: float,
@@ -2207,7 +2206,7 @@ def _select_by_model_devi_standard(
 
 
 def _select_by_model_devi_adaptive_trust_low(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_hi: float,
     numb_candi_f: int,
     perc_candi_f: float,
