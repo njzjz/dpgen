@@ -2637,6 +2637,7 @@ def _make_fp_vasp_inner(
             elif model_devi_engine == "amber":
                 conf_name = os.path.join(tt, "rc.nc")
                 rst_name = os.path.abspath(os.path.join(tt, "init.rst7"))
+                disang_name = os.path.abspath(os.path.join(tt, "TEMPLATE.disang"))
             elif model_devi_engine == "calypso":
                 conf_name = os.path.join(conf_name, str(ii) + ".poscar")
                 ffmt = "vasp/poscar"
@@ -2708,6 +2709,8 @@ def _make_fp_vasp_inner(
                     # link restart since it's necessary to start Amber
                     os.symlink(os.path.relpath(rst_name), "init.rst7")
                     os.symlink(os.path.relpath(job_name), "job.json")
+                    if jdata.get("rxn_idx") is not None:
+                        os.symlink(os.path.relpath(disang_name), "TEMPLATE.disang")
                 elif model_devi_engine == "calypso":
                     os.symlink(os.path.relpath(conf_name), "POSCAR")
                     fjob = open("job.json", "w+")
@@ -3768,6 +3771,10 @@ def run_fp_inner(
                 'dpamber corr --cutoff {:f} --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region "$QM_REGION"'
             ).format(jdata["cutoff"])
         )
+        if jdata.get("rxn_idx") is not None:
+            fp_command += " --disang TEMPLATE.disang --rxn {}".format(
+                " ".join([str(xx) for xx in jdata["rxn_idx"]])
+            )
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
