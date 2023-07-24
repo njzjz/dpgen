@@ -779,6 +779,10 @@ def fp_style_amber_diff_args() -> list[Argument]:
         "Path to low-level AMBER mdin template file. %qm_theory%, %qm_region%, "
         "and %qm_charge% will be replaced."
     )
+    doc_rxn_idx = (
+        "If not None, generate drdq where q is the specific reaction coordinate. "
+        "All systems are expected to have the same dimension."
+    )
     return [
         Argument("high_level", str, optional=False, doc=doc_high_level),
         Argument(
@@ -792,6 +796,12 @@ def fp_style_amber_diff_args() -> list[Argument]:
                 ),
                 Argument("low_level_mdin", str, optional=False, doc=doc_low_level_mdin),
             ],
+        ),
+        Argument(
+            "rxn_idx",
+            [list, type(None)],
+            optional=True,
+            doc=doc_rxn_idx,
         ),
     ]
 
