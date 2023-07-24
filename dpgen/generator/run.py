@@ -3772,7 +3772,9 @@ def run_fp_inner(
             ).format(jdata["cutoff"])
         )
         if jdata.get("rxn_idx") is not None:
-            fp_command += " --disang TEMPLATE.disang --rxn {}".format(" ".join([str(xx) for xx in jdata["rxn_idx"]]))
+            fp_command += " --disang TEMPLATE.disang --rxn {}".format(
+                " ".join([str(xx) for xx in jdata["rxn_idx"]])
+            )
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
