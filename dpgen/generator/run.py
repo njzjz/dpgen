@@ -3935,6 +3935,8 @@ def run_fp(iter_index, jdata, mdata):
             "qm_region",
             "init*.rst7",
         ]
+        if jdata.get("rxn_idx") is not None:
+            forward_files.append("TEMPLATE.disang")
         run_fp_inner(
             iter_index,
             jdata,
