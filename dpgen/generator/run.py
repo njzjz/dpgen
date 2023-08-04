@@ -1802,7 +1802,12 @@ def _make_model_devi_amber(
                 restart_from_iter = cur_job["restart_from_iter"]
                 restart_iter_name = make_iter_name(restart_from_iter)
                 os.symlink(
-                    os.path.relpath(os.path.join(restart_iter_name, model_devi_name, task_name, "rc.rst7"), task_path),
+                    os.path.relpath(
+                        os.path.join(
+                            restart_iter_name, model_devi_name, task_name, "rc.rst7"
+                        ),
+                        task_path,
+                    ),
                     os.path.join(task_path, loc_conf_name),
                 )
             cwd_ = os.getcwd()

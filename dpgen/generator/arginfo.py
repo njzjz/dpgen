@@ -498,7 +498,9 @@ def model_devi_amber_args() -> list[Argument]:
             sub_fields=[
                 Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
                 Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
-                Argument("restart_from_iter", int, optional=True, doc=doc_restart_from_iter),
+                Argument(
+                    "restart_from_iter", int, optional=True, doc=doc_restart_from_iter
+                ),
             ],
         ),
         Argument("low_level", str, optional=False, doc=doc_low_level),
