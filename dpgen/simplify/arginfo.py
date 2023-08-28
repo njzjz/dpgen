@@ -74,14 +74,14 @@ def general_simplify_arginfo() -> Argument:
             "true_error_f_trust_lo",
             float,
             optional=True,
-            optional=float("inf"),
+            default=float("inf"),
             doc=doc_true_error_f_trust_lo,
         ),
         Argument(
             "true_error_f_trust_hi",
             float,
             optional=True,
-            optional=float("inf"),
+            default=float("inf"),
             doc=doc_true_error_f_trust_hi,
         ),
         Argument(
