@@ -34,12 +34,8 @@ def general_simplify_arginfo() -> Argument:
     )
     doc_model_devi_e_trust_lo = "The lower bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
     doc_model_devi_e_trust_hi = "The higher bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
-    doc_true_error_f_trust_lo = (
-        "The lower bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
-    )
-    doc_true_error_f_trust_hi = (
-        "The higher bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
-    )
+    doc_true_error_f_trust_lo = "The lower bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
+    doc_true_error_f_trust_hi = "The higher bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
     doc_true_error_e_trust_lo = "The lower bound of energy per atom for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
     doc_true_error_e_trust_hi = "The higher bound of energy per atom for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
 
@@ -74,7 +70,6 @@ def general_simplify_arginfo() -> Argument:
             default=float("inf"),
             doc=doc_model_devi_e_trust_hi,
         ),
-
         Argument(
             "true_error_f_trust_lo",
             float,

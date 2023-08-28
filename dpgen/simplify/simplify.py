@@ -239,12 +239,16 @@ def run_model_devi(iter_index, jdata, mdata):
     forward_files = [system_file_name]
     backward_files = [detail_file_name]
 
-    if jdata["true_error_f_trust_lo"] < float("inf") or jdata["true_error_e_trust_lo"] < float("inf"):
-        command_true_error = "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
-            dp=mdata.get("model_devi_command", "dp"),
-            model=" ".join(task_model_list),
-            system=system_file_name,
-            detail_file=true_error_file_name,
+    if jdata["true_error_f_trust_lo"] < float("inf") or jdata[
+        "true_error_e_trust_lo"
+    ] < float("inf"):
+        command_true_error = (
+            "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
+                dp=mdata.get("model_devi_command", "dp"),
+                model=" ".join(task_model_list),
+                system=system_file_name,
+                detail_file=true_error_file_name,
+            )
         )
         commands.append(command_true_error)
         backward_files.append(true_error_file_name)
@@ -330,9 +334,13 @@ def post_model_devi(iter_index, jdata, mdata):
                     elif f_devi < f_trust_lo and e_devi < e_trust_lo:
                         sys_accurate.append(subsys)
                     else:
-                        raise RuntimeError("reach a place that should NOT be reached...")
+                        raise RuntimeError(
+                            "reach a place that should NOT be reached..."
+                        )
     else:
-        with open(os.path.join(work_path, detail_file_name)) as f, open(os.path.join(work_path, true_error_file_name)) as f_err:
+        with open(os.path.join(work_path, detail_file_name)) as f, open(
+            os.path.join(work_path, true_error_file_name)
+        ) as f_err:
             for line, line_err in zip(f, f_err):
                 if line.startswith("# data.rest.old"):
                     name = (line.split()[1]).split("/")[-1]
@@ -349,7 +357,12 @@ def post_model_devi(iter_index, jdata, mdata):
                     e_err = float(line_err.split()[cidx_devi_e])
 
                     subsys = sys_entire[name][idx]
-                    if f_devi >= f_trust_hi or e_devi >= e_trust_hi or f_err >= f_trust_hi_err or e_err >= e_trust_hi_err:
+                    if (
+                        f_devi >= f_trust_hi
+                        or e_devi >= e_trust_hi
+                        or f_err >= f_trust_hi_err
+                        or e_err >= e_trust_hi_err
+                    ):
                         sys_failed.append(subsys)
                     elif (
                         f_trust_lo <= f_devi < f_trust_hi
@@ -358,11 +371,17 @@ def post_model_devi(iter_index, jdata, mdata):
                         or e_trust_lo_err <= e_err < e_trust_hi_err
                     ):
                         sys_candinate.append(subsys)
-                    elif f_devi < f_trust_lo and e_devi < e_trust_lo and f_err < f_trust_lo_err and e_err < e_trust_lo_err:
+                    elif (
+                        f_devi < f_trust_lo
+                        and e_devi < e_trust_lo
+                        and f_err < f_trust_lo_err
+                        and e_err < e_trust_lo_err
+                    ):
                         sys_accurate.append(subsys)
                     else:
-                        raise RuntimeError("reach a place that should NOT be reached...")
-
+                        raise RuntimeError(
+                            "reach a place that should NOT be reached..."
+                        )
 
     counter = {
         "candidate": sys_candinate.get_nframes(),
