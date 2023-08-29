@@ -285,10 +285,10 @@ def post_model_devi(iter_index, jdata, mdata):
     f_trust_hi = jdata["model_devi_f_trust_hi"]
     e_trust_lo = jdata["model_devi_e_trust_lo"]
     e_trust_hi = jdata["model_devi_e_trust_hi"]
-    f_trust_lo_err = jdata["true_error_f_trust_lo"]
-    f_trust_hi_err = jdata["true_error_f_trust_hi"]
-    e_trust_lo_err = jdata["true_error_e_trust_lo"]
-    e_trust_hi_err = jdata["true_error_e_trust_hi"]
+    f_trust_lo_err = jdata.get("true_error_f_trust_lo", float("inf"))
+    f_trust_hi_err = jdata.get("true_error_f_trust_hi", float("inf"))
+    e_trust_lo_err = jdata.get("true_error_e_trust_lo", float("inf"))
+    e_trust_hi_err = jdata.get("true_error_e_trust_hi", float("inf"))
     use_true_error = f_trust_lo_err < float("inf") or e_trust_lo_err < float("inf")
 
     type_map = jdata.get("type_map", [])
