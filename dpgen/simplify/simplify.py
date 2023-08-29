@@ -239,9 +239,9 @@ def run_model_devi(iter_index, jdata, mdata):
     forward_files = [system_file_name]
     backward_files = [detail_file_name]
 
-    if jdata["true_error_f_trust_lo"] < float("inf") or jdata[
-        "true_error_e_trust_lo"
-    ] < float("inf"):
+    f_trust_lo_err = jdata.get("true_error_f_trust_lo", float("inf"))
+    e_trust_lo_err = jdata.get("true_error_e_trust_lo", float("inf"))
+    if f_trust_lo_err < float("inf") or e_trust_lo_err < float("inf"):
         command_true_error = (
             "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
                 dp=mdata.get("model_devi_command", "dp"),
