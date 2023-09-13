@@ -95,6 +95,7 @@ from dpgen.util import (
     normalize,
     sepline,
     set_directory,
+    setup_ele_temp,
 )
 
 from .arginfo import run_jdata_arginfo
@@ -275,11 +276,11 @@ def make_train(iter_index, jdata, mdata):
     elif "training_reuse_numb_steps" in jdata.keys():
         training_reuse_stop_batch = jdata["training_reuse_numb_steps"]
     else:
-        training_reuse_stop_batch = 400000
+        training_reuse_stop_batch = None
 
-    training_reuse_start_lr = jdata.get("training_reuse_start_lr", 1e-4)
-    training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e", 0.1)
-    training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f", 100)
+    training_reuse_start_lr = jdata.get("training_reuse_start_lr")
+    training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e")
+    training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f")
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
 
     auto_ratio = False
@@ -508,11 +509,18 @@ def make_train(iter_index, jdata, mdata):
             raise RuntimeError(
                 "Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"]
             )
-        if jinput["loss"].get("start_pref_e") is not None:
+        if (
+            jinput["loss"].get("start_pref_e") is not None
+            and training_reuse_start_pref_e is not None
+        ):
             jinput["loss"]["start_pref_e"] = training_reuse_start_pref_e
-        if jinput["loss"].get("start_pref_f") is not None:
+        if (
+            jinput["loss"].get("start_pref_f") is not None
+            and training_reuse_start_pref_f is not None
+        ):
             jinput["loss"]["start_pref_f"] = training_reuse_start_pref_f
-        jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
+        if training_reuse_start_lr is not None:
+            jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
 
     input_files = []
     for ii in range(numb_models):
@@ -4048,10 +4056,6 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                     _sys = dpdata.LabeledSystem()
                     dlog.info("Failed fp path: %s" % oo.replace("OUTCAR", ""))
             if len(_sys) == 1:
-                if all_sys is None:
-                    all_sys = _sys
-                else:
-                    all_sys.append(_sys)
                 # save ele_temp, if any
                 if os.path.exists(oo.replace("OUTCAR", "job.json")):
                     with open(oo.replace("OUTCAR", "job.json")) as fp:
@@ -4060,6 +4064,27 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                         assert use_ele_temp
                         ele_temp = job_data["ele_temp"]
                         all_te.append(ele_temp)
+                        if use_ele_temp == 0:
+                            raise RuntimeError(
+                                "should not get ele temp at setting: use_ele_temp == 0"
+                            )
+                        elif use_ele_temp == 1:
+                            _sys.data["fparam"] = np.array(ele_temp).reshape(1, 1)
+                        elif use_ele_temp == 2:
+                            tile_te = np.tile(ele_temp, [_sys.get_natoms()])
+                            _sys.data["aparam"] = tile_te.reshape(
+                                1, _sys.get_natoms(), 1
+                            )
+                        else:
+                            raise RuntimeError(
+                                "invalid setting of use_ele_temp " + str(use_ele_temp)
+                            )
+                        # check if ele_temp shape is correct
+                        _sys.check_data()
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
             elif len(_sys) >= 2:
                 raise RuntimeError("The vasp parameter NSW should be set as 1")
             else:
@@ -4069,29 +4094,6 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
             sys_data_path = os.path.join(work_path, "data.%s" % ss)
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_outcars))
-            if all_te.size > 0:
-                assert len(all_sys) == all_sys.get_nframes()
-                assert len(all_sys) == all_te.size
-                all_te = np.reshape(all_te, [-1, 1])
-                if use_ele_temp == 0:
-                    raise RuntimeError(
-                        "should not get ele temp at setting: use_ele_temp == 0"
-                    )
-                elif use_ele_temp == 1:
-                    np.savetxt(os.path.join(sys_data_path, "fparam.raw"), all_te)
-                    np.save(
-                        os.path.join(sys_data_path, "set.000", "fparam.npy"), all_te
-                    )
-                elif use_ele_temp == 2:
-                    tile_te = np.tile(all_te, [1, all_sys.get_natoms()])
-                    np.savetxt(os.path.join(sys_data_path, "aparam.raw"), tile_te)
-                    np.save(
-                        os.path.join(sys_data_path, "set.000", "aparam.npy"), tile_te
-                    )
-                else:
-                    raise RuntimeError(
-                        "invalid setting of use_ele_temp " + str(use_ele_temp)
-                    )
 
     if tcount == 0:
         rfail = 0.0
@@ -4535,6 +4537,13 @@ def run_iter(param_file, machine_file):
     jdata = normalize(jdata_arginfo, jdata, strict_check=False)
 
     update_mass_map(jdata)
+
+    # set up electron temperature
+    use_ele_temp = jdata.get("use_ele_temp", 0)
+    if use_ele_temp == 1:
+        setup_ele_temp(False)
+    elif use_ele_temp == 2:
+        setup_ele_temp(True)
 
     if jdata.get("pretty_print", False):
         from monty.serialization import dumpfn
