@@ -228,6 +228,7 @@ def setup_ele_temp(atomic: bool):
         Whether to use atomic temperature or frame temperature
     """
     if atomic:
+        return
         ele_temp_data_type = DataType(
             "aparam",
             np.ndarray,
