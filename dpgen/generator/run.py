@@ -31,6 +31,7 @@ from typing import Optional
 import dpdata
 import numpy as np
 import scipy.constants as pc
+import yaml
 from numpy.linalg import norm
 from packaging.version import Version
 from pymatgen.io.vasp import Incar, Kpoints
@@ -56,6 +57,12 @@ from dpgen.generator.lib.lammps import (
     get_all_dumped_forces,
     get_dumped_forces,
     make_lammps_input,
+)
+from dpgen.generator.lib.mace import (
+    convert_atom_names_to_Z as convert_atom_names_to_Z_mace,
+)
+from dpgen.generator.lib.mace import (
+    convert_training_data_to_mace,
 )
 from dpgen.generator.lib.make_calypso import (
     _make_model_devi_buffet,
@@ -139,6 +146,8 @@ def _get_model_suffix(jdata) -> str:
                 f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
             )
         return suffix
+    elif mlp_engine == "mace":
+        return ".model"
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
@@ -277,6 +286,8 @@ def make_train(iter_index, jdata, mdata):
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
         return make_train_dp(iter_index, jdata, mdata)
+    elif mlp_engine == "mace":
+        return make_train_mace(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
@@ -725,10 +736,101 @@ def get_nframes(system):
     return s.get_nframes()
 
 
+def make_train_mace(iter_index, jdata, mdata):
+    fp_task_min = jdata["fp_task_min"]
+    init_data_prefix = os.path.abspath(jdata["init_data_prefix"])
+    numb_models = jdata["numb_models"]
+    type_map = jdata["type_map"]
+    jinput = jdata["default_training_param"]
+    init_data_sys_ = jdata["init_data_sys"]
+
+    train_input_file = "input.yaml"
+    work_path = os.path.join(make_iter_name(iter_index), train_name)
+    data_file = os.path.join(work_path, "data.xyz")
+    create_path(work_path)
+    # link init data
+    cwd = os.getcwd()
+    os.chdir(work_path)
+    os.symlink(os.path.abspath(init_data_prefix), "data.init")
+    # link iter data
+    os.mkdir("data.iters")
+    os.chdir("data.iters")
+    for ii in range(iter_index):
+        os.symlink(
+            os.path.relpath(os.path.join(cwd, make_iter_name(ii))), make_iter_name(ii)
+        )
+    os.chdir(cwd)
+
+    suffix = ".model"
+    if iter_index > 0 and _check_empty_iter(iter_index - 1, fp_task_min):
+        log_task("prev data is empty, copy prev model")
+        copy_model(numb_models, iter_index - 1, iter_index, suffix)
+        return
+
+    init_data_sys = []
+
+    for ii in init_data_sys_:
+        sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
+        for single_sys in sys_paths:
+            init_data_sys.append(
+                os.path.normpath(
+                    os.path.join(
+                        work_path,
+                        "data.init",
+                        ii,
+                        os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)),
+                    )
+                )
+            )
+    if iter_index > 0:
+        for ii in range(iter_index):
+            fp_path = os.path.join(make_iter_name(ii), fp_name)
+            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
+            for jj in fp_data_sys:
+                sys_paths = expand_sys_str(jj)
+                nframes = 0
+                for sys_single in sys_paths:
+                    nframes += dpdata.LabeledSystem(
+                        sys_single, fmt="deepmd/npy"
+                    ).get_nframes()
+                if nframes < fp_task_min:
+                    log_task(
+                        "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
+                    )
+                    continue
+                for sys_single in sys_paths:
+                    init_data_sys.append(
+                        os.path.normpath(
+                            os.path.join(work_path, "data.iters", sys_single)
+                        )
+                    )
+
+    # prepare training data
+    e0 = convert_training_data_to_mace(type_map, init_data_sys, data_file)
+
+    # prepare input script
+
+    for ii in range(numb_models):
+        task_path = os.path.join(work_path, train_task_fmt % ii)
+        create_path(task_path)
+        jinput_ii = copy.deepcopy(jinput)
+        jinput_ii["seed"] = random.randrange(sys.maxsize) % (2**32)
+        # name affects the filename, so must be fixed
+        jinput_ii["name"] = "frozen_model"
+        jinput_ii["train_file"] = os.path.relpath(data_file, task_path)
+        jinput_ii["E0s"] = {
+            convert_atom_names_to_Z_mace(tt): float(ee) for tt, ee in zip(type_map, e0)
+        }
+        with open(os.path.join(task_path, train_input_file), "w") as outfile:
+            yaml.dump(jinput_ii, outfile)
+
+
 def run_train(iter_index, jdata, mdata):
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
-        return make_train_dp(iter_index, jdata, mdata)
+        return run_train_dp(iter_index, jdata, mdata)
+    elif mlp_engine == "mace":
+        return run_train_mace(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
@@ -918,10 +1020,42 @@ def run_train_dp(iter_index, jdata, mdata):
     submission.run_submission()
 
 
+def run_train_mace(iter_index, jdata, mdata):
+    numb_models = jdata["numb_models"]
+    work_path = os.path.join(make_iter_name(iter_index), train_name)
+    train_group_size = mdata.get("train_group_size", 1)
+    trans_comm_data = ["data.xyz"]
+    forward_files = ["input.yaml"]
+    backward_files = ["frozen_model.model"]
+    run_tasks = [train_task_fmt % ii for ii in range(numb_models)]
+
+    train_command = mdata.get("train_command", "mace_run_train").strip()
+    commands = [f"{train_command} --config=input.yaml"]
+
+    check_api_version(mdata)
+
+    submission = make_submission(
+        mdata["train_machine"],
+        mdata["train_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=train_group_size,
+        forward_common_files=trans_comm_data,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="train.log",
+        errlog="train.log",
+    )
+    submission.run_submission()
+
+
 def post_train(iter_index, jdata, mdata):
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
         return post_train_dp(iter_index, jdata, mdata)
+    elif mlp_engine == "mace":
+        return post_train_mace(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
@@ -943,6 +1077,29 @@ def post_train_dp(iter_index, jdata, mdata):
         model_name = f"frozen_model{suffix}"
         if jdata.get("dp_compress", False):
             model_name = f"frozen_model_compressed{suffix}"
+
+        ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
+        task_file = os.path.join(train_task_fmt % ii, model_name)
+        if os.path.isfile(ofile):
+            os.remove(ofile)
+        os.symlink(task_file, ofile)
+
+
+def post_train_mace(iter_index, jdata, mdata):
+    # load json param
+    numb_models = jdata["numb_models"]
+    # paths
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, train_name)
+    # check if is copied
+    copy_flag = os.path.join(work_path, "copied")
+    if os.path.isfile(copy_flag):
+        log_task("copied model, do not post train")
+        return
+    # symlink models
+    suffix = ".model"
+    for ii in range(numb_models):
+        model_name = f"frozen_model{suffix}"
 
         ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
         task_file = os.path.join(train_task_fmt % ii, model_name)
@@ -4708,7 +4865,7 @@ def run_iter(param_file, machine_file):
     mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+    jdata = normalize(jdata_arginfo, jdata, strict_check=True)
 
     update_mass_map(jdata)
 

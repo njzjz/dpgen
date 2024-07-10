@@ -229,6 +229,19 @@ def training_args_dp() -> list[Argument]:
     ]
 
 
+def training_args_mace() -> list[Argument]:
+    doc_default_training_param = "Training parameters for mace in 00.train."
+
+    return [
+        Argument(
+            "default_training_param",
+            dict,
+            optional=False,
+            doc=doc_default_training_param,
+        ),
+    ]
+
+
 def training_args() -> Variant:
     doc_mlp_engine = "Machine learning potential engine. Currently, only DeePMD-kit (defualt) is supported."
     doc_dp = "DeePMD-kit."
@@ -236,6 +249,7 @@ def training_args() -> Variant:
         "mlp_engine",
         [
             Argument("dp", dict, training_args_dp(), doc=doc_dp),
+            Argument("mace", dict, training_args_mace()),
         ],
         default_tag="dp",
         doc=doc_mlp_engine,
