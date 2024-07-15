@@ -501,6 +501,7 @@ def model_devi_amber_args() -> list[Argument]:
     )
     doc_sys_idx = "List of ints. List of systems to run."
     doc_trj_freq = "Frequency to dump trajectory."
+    doc_model_devi_skip = "Number of structures skipped for fp in each MD."
     doc_low_level = (
         "Low level method. The value will be filled into mdin file as @qm_theory@."
     )
@@ -560,6 +561,7 @@ def model_devi_amber_args() -> list[Argument]:
                 ),
             ],
         ),
+        Argument("model_devi_skip", int, optional=False, doc=doc_model_devi_skip),
         Argument("low_level", str, optional=False, doc=doc_low_level),
         Argument("cutoff", float, optional=False, doc=doc_cutoff),
         Argument("parm7_prefix", str, optional=True, doc=doc_parm7_prefix),
