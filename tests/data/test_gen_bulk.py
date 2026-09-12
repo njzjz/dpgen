@@ -7,6 +7,8 @@ import unittest
 
 from pymatgen.core import Composition, Structure
 
+from dpgen._compat import zip_strict
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
 from .context import setUpModule  # noqa: F401
@@ -56,7 +58,7 @@ class TestGenBulk(unittest.TestCase):
         for ii in alloys:
             elem_numb = [int(i) for i in ii.split("/")[-1].split("-")[1:]]
             comp = ""
-            for num, el in zip(elem_numb, self.elements):
+            for num, el in zip_strict(elem_numb, self.elements):
                 comp += el + str(num)
             comp = Composition(comp)
             struct = Structure.from_file(os.path.join(ii, "POSCAR"))

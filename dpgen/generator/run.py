@@ -35,6 +35,7 @@ from numpy.linalg import norm
 from packaging.version import Version
 
 from dpgen import ROOT_PATH, SHORT_CMD, dlog
+from dpgen._compat import zip_strict
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
@@ -129,13 +130,13 @@ def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
-        suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
+        suffix_map = {"tensorflow": ".pb", "pytorch": ".pth", "jax": ".savedmodel"}
         backend = jdata.get("train_backend", "tensorflow")
         if backend in suffix_map:
             suffix = suffix_map[backend]
         else:
             raise ValueError(
-                f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
+                f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch', 'jax'."
             )
         return suffix
     else:
@@ -202,7 +203,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
         os.symlink(
             os.path.join(train_task_fmt % ii, f"frozen_model{suffix}"),
-            "graph.%03d%s" % (ii, suffix),
+            "graph.%03d%s" % (ii, suffix),  # noqa: UP031
         )
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
@@ -338,7 +339,7 @@ def make_train_dp(iter_index, jdata, mdata):
         and iter_index > 0
         and _check_skip_train(model_devi_jobs[iter_index - 1])
     ):
-        log_task("skip training at step %d " % (iter_index - 1))
+        log_task("skip training at step %d " % (iter_index - 1))  # noqa: UP031
         copy_model(numb_models, iter_index - 1, iter_index, suffix)
         return
     else:
@@ -385,7 +386,8 @@ def make_train_dp(iter_index, jdata, mdata):
 
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert len(init_data_sys_) <= len(init_batch_size_)
-    for ii, ss in zip(init_data_sys_, init_batch_size_):
+    # Extra batch-size entries are allowed by the legacy input format.
+    for ii, ss in zip(init_data_sys_, init_batch_size_):  # noqa: B905
         sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
         for single_sys in sys_paths:
             init_data_sys.append(
@@ -432,7 +434,7 @@ def make_train_dp(iter_index, jdata, mdata):
                         number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
-                        "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
+                        "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)  # noqa: UP031
                     )
                     continue
                 for sys_single in sys_paths:
@@ -474,7 +476,7 @@ def make_train_dp(iter_index, jdata, mdata):
             raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     elif Version(mdata["deepmd_version"]) >= Version("2") and Version(
         mdata["deepmd_version"]
-    ) < Version("3"):
+    ) < Version("4"):
         # 2.x
         jinput["training"].setdefault("training_data", {})
         jinput["training"]["training_data"]["systems"] = init_data_sys
@@ -497,7 +499,7 @@ def make_train_dp(iter_index, jdata, mdata):
             raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     else:
         raise RuntimeError(
-            "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
     # set training reuse model
     if auto_ratio:
@@ -513,7 +515,7 @@ def make_train_dp(iter_index, jdata, mdata):
             jinput["training"]["stop_batch"] = training_reuse_stop_batch
         if Version("1") <= Version(mdata["deepmd_version"]) < Version("2"):
             jinput["training"]["auto_prob_style"] = (
-                "prob_sys_size; 0:%d:%f; %d:%d:%f"
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
                 % (
                     old_range,
                     training_reuse_old_ratio,
@@ -522,9 +524,9 @@ def make_train_dp(iter_index, jdata, mdata):
                     1.0 - training_reuse_old_ratio,
                 )
             )
-        elif Version("2") <= Version(mdata["deepmd_version"]) < Version("3"):
+        elif Version("2") <= Version(mdata["deepmd_version"]) < Version("4"):
             jinput["training"]["training_data"]["auto_prob"] = (
-                "prob_sys_size; 0:%d:%f; %d:%d:%f"
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
                 % (
                     old_range,
                     training_reuse_old_ratio,
@@ -571,7 +573,7 @@ def make_train_dp(iter_index, jdata, mdata):
         # set random seed for each model
         if Version(mdata["deepmd_version"]) >= Version("1") and Version(
             mdata["deepmd_version"]
-        ) < Version("3"):
+        ) < Version("4"):
             # 1.x
             if "descriptor" not in jinput["model"]:
                 pass
@@ -595,7 +597,7 @@ def make_train_dp(iter_index, jdata, mdata):
             jinput["training"]["seed"] = random.randrange(sys.maxsize) % (2**32)
         else:
             raise RuntimeError(
-                "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+                "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
             )
         # set model activation function
         if model_devi_activation_func is not None:
@@ -649,7 +651,7 @@ def make_train_dp(iter_index, jdata, mdata):
             iter0_models += [os.path.abspath(ii) for ii in model_is]
         if training_init_model:
             assert numb_models == len(iter0_models), (
-                "training_iter0_model should be provided, and the number of models should be equal to %d"
+                "training_iter0_model should be provided, and the number of models should be equal to %d"  # noqa: UP031
                 % numb_models
             )
         for ii in range(len(iter0_models)):
@@ -766,6 +768,8 @@ def run_train_dp(iter_index, jdata, mdata):
     # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
     if suffix == ".pth":
         train_command += " --pt"
+    elif suffix == ".savedmodel":
+        train_command += " --jax"
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -783,7 +787,7 @@ def run_train_dp(iter_index, jdata, mdata):
     commands = []
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
-    ) < Version("3"):
+    ) < Version("4"):
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -803,6 +807,8 @@ def run_train_dp(iter_index, jdata, mdata):
             ckpt_suffix = ".index"
         elif suffix == ".pth":
             ckpt_suffix = ".pt"
+        elif suffix == ".savedmodel":
+            ckpt_suffix = ".jax"
         else:
             raise RuntimeError(f"Unknown suffix {suffix}")
         command = f"{{ if [ ! -f model.ckpt{ckpt_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
@@ -814,7 +820,7 @@ def run_train_dp(iter_index, jdata, mdata):
             commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
-            "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
 
     # _tasks = [os.path.basename(ii) for ii in all_task]
@@ -840,6 +846,10 @@ def run_train_dp(iter_index, jdata, mdata):
             ]
         elif suffix == ".pth":
             forward_files += [os.path.join("old", "model.ckpt.pt")]
+        elif suffix == ".savedmodel":
+            forward_files += [os.path.join("old", "model.ckpt.jax")]
+        else:
+            raise RuntimeError(f"Unknown suffix {suffix}")
     elif training_init_frozen_model is not None or training_finetune_model is not None:
         forward_files.append(os.path.join("old", f"init{suffix}"))
 
@@ -860,6 +870,10 @@ def run_train_dp(iter_index, jdata, mdata):
         ]
     elif suffix == ".pth":
         backward_files += ["model.ckpt.pt"]
+    elif suffix == ".savedmodel":
+        backward_files += ["model.ckpt.jax"]
+    else:
+        raise RuntimeError(f"Unknown suffix {suffix}")
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -941,7 +955,7 @@ def post_train_dp(iter_index, jdata, mdata):
         if jdata.get("dp_compress", False):
             model_name = f"frozen_model_compressed{suffix}"
 
-        ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
+        ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))  # noqa: UP031
         task_file = os.path.join(train_task_fmt % ii, model_name)
         if os.path.isfile(ofile):
             os.remove(ofile)
@@ -1055,28 +1069,147 @@ def find_only_one_key(lmp_lines, key):
         if len(words) >= nkey and words[:nkey] == key:
             found.append(idx)
     if len(found) > 1:
-        raise RuntimeError("found %d keywords %s" % (len(found), key))
+        raise RuntimeError("found %d keywords %s" % (len(found), key))  # noqa: UP031
     if len(found) == 0:
         raise RuntimeError(f"failed to find keyword {key}")
     return found[0]
 
 
-def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version="1"):
+def revise_lmp_input_model(
+    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0, jdata=None
+):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
+
+    # Check if D3 dispersion is configured
+    lmp_d3 = jdata.get("lmp_d3", {}) if jdata else {}
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+
     if Version(deepmd_version) < Version("1"):
-        lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (
-            graph_list,
-            trj_freq,
-        )
-    else:
-        lmp_lines[idx] = (
-            "pair_style      deepmd %s out_freq %d out_file model_devi.out\n"
-            % (
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = (
+                f"pair_style      hybrid/overlay deepmd {graph_list} {trj_freq} model_devi.out dispersion/d3 {d3_params}\n"
+            )
+        else:
+            lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
                 graph_list,
                 trj_freq,
             )
+    else:
+        # Build keywords string like in make_lammps_input
+        keywords = ""
+        if jdata is not None:
+            if jdata.get("use_clusters", False):
+                keywords += "atomic "
+            if jdata.get("use_relative", False):
+                keywords += "relative {} ".format(jdata["epsilon"])
+            if jdata.get("use_relative_v", False):
+                keywords += "relative_v {} ".format(jdata["epsilon_v"])
+
+        if use_ele_temp == 1:
+            keywords += "fparam ${ELE_TEMP}"
+
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = (
+                "pair_style      hybrid/overlay deepmd %s out_freq %d out_file model_devi.out %s dispersion/d3 %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                    d3_params,
+                )
+            )
+        else:
+            lmp_lines[idx] = (
+                "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                )
+            )
+    return lmp_lines
+
+
+def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
+    """Update pair_coeff lines for D3 support."""
+    if jdata is None:
+        return lmp_lines
+
+    lmp_d3 = jdata.get("lmp_d3", {})
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+
+    if not d3_enabled:
+        return lmp_lines
+
+    # D3 requires type maps (element symbols)
+    type_map = jdata.get("type_map", [])
+    type_map_str = " ".join(type_map)
+
+    # Find pair_coeff line
+    pair_coeff_idx = None
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("pair_coeff") and "* *" in line:
+            pair_coeff_idx = idx
+            break
+
+    if pair_coeff_idx is None:
+        # If no pair_coeff found, add them after pair_style
+        pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+        lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
+        lmp_lines.insert(
+            pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
         )
+    else:
+        # Replace existing pair_coeff with D3 version
+        lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
+        lmp_lines.insert(
+            pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        )
+
+    return lmp_lines
+
+
+def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
+    """Add neigh_modify one N if requested."""
+    if jdata is None:
+        return lmp_lines
+
+    neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    if neigh_modify_one is None:
+        return lmp_lines
+
+    # Find where to insert neigh_modify one N
+    # Look for existing neigh_modify lines or insert after neighbor command
+    neigh_modify_found = False
+    neighbor_idx = None
+
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("neigh_modify") and " one " in line:
+            neigh_modify_found = True
+            break
+        elif line.strip().startswith("neighbor"):
+            neighbor_idx = idx
+
+    if not neigh_modify_found:
+        if neighbor_idx is not None:
+            lmp_lines.insert(
+                neighbor_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
+            )
+        else:
+            # Insert after units command if neighbor not found
+            units_idx = None
+            for idx, line in enumerate(lmp_lines):
+                if line.strip().startswith("units"):
+                    units_idx = idx
+                    break
+            if units_idx is not None:
+                lmp_lines.insert(
+                    units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
+                )
+
     return lmp_lines
 
 
@@ -1084,12 +1217,12 @@ def revise_lmp_input_dump(lmp_lines, trj_freq, model_devi_merge_traj=False):
     idx = find_only_one_key(lmp_lines, ["dump", "dpgen_dump"])
     if model_devi_merge_traj:
         lmp_lines[idx] = (
-            "dump            dpgen_dump all custom %d    all.lammpstrj id type x y z\n"
+            "dump            dpgen_dump all custom %d    all.lammpstrj id type x y z\n"  # noqa: UP031
             % trj_freq
         )
     else:
         lmp_lines[idx] = (
-            "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n"
+            "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n"  # noqa: UP031
             % trj_freq
         )
 
@@ -1105,7 +1238,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
 
 
 def revise_by_keys(lmp_lines, keys, values):
-    for kk, vv in zip(keys, values):
+    for kk, vv in zip_strict(keys, values):
         for ii in range(len(lmp_lines)):
             lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
     return lmp_lines
@@ -1213,10 +1346,10 @@ def make_model_devi(iter_index, jdata, mdata):
                 # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
                 for temp_idx in range(number_of_pressure):
                     calypso_run_opt_path.append(
-                        "%s.%03d" % (_calypso_run_opt_path, temp_idx)
+                        "%s.%03d" % (_calypso_run_opt_path, temp_idx)  # noqa: UP031
                     )
             elif not jdata.get("vsc", False):
-                calypso_run_opt_path.append("%s.%03d" % (_calypso_run_opt_path, 0))
+                calypso_run_opt_path.append("%s.%03d" % (_calypso_run_opt_path, 0))  # noqa: UP031
 
         # mode 2: control each iteration to generate structures in specific way
         # by providing model_devi_jobs key
@@ -1228,7 +1361,7 @@ def make_model_devi(iter_index, jdata, mdata):
             pressures_list = cur_job.get("PSTRESS", [0.0001])
             for temp_idx in range(len(pressures_list)):
                 calypso_run_opt_path.append(
-                    "%s.%03d" % (_calypso_run_opt_path, temp_idx)
+                    "%s.%03d" % (_calypso_run_opt_path, temp_idx)  # noqa: UP031
                 )
         # to different directory
         # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
@@ -1282,7 +1415,7 @@ def make_model_devi(iter_index, jdata, mdata):
                     type_map=jdata["type_map"],
                 )
                 if shuffle_poscar:
-                    system.data["coords"] = rng.permuted(system.data["coords"], axis=1)
+                    rng.shuffle(system.data["coords"], axis=1)
                 if jdata.get("model_devi_nopbc", False):
                     system.remove_pbc()
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
@@ -1340,6 +1473,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job["sys_idx"])
     if len(sys_idx) != len(list(set(sys_idx))):
         raise RuntimeError("system index should be uniq")
+
+    use_ele_temp = jdata.get("use_ele_temp", 0)
     mass_map = jdata["mass_map"]
     use_plm = jdata.get("model_devi_plumed", False)
     use_plm_path = jdata.get("model_devi_plumed_path", False)
@@ -1446,7 +1581,12 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 task_model_list,
                                 trj_freq,
                                 deepmd_version=deepmd_version,
+                                use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                     else:
                         if len(lmp_lines[template_pair_deepmd_idx].split()) != (
                             len(models)
@@ -1466,7 +1606,12 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 task_model_list,
                                 trj_freq,
                                 deepmd_version=deepmd_version,
+                                use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                 # use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
                 else:
                     lmp_lines = revise_lmp_input_model(
@@ -1474,7 +1619,13 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         task_model_list,
                         trj_freq,
                         deepmd_version=deepmd_version,
+                        use_ele_temp=use_ele_temp,
+                        jdata=jdata,
                     )
+
+                # Add D3 pair_coeff and neigh_modify support for templates
+                lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
 
                 lmp_lines = revise_lmp_input_dump(
                     lmp_lines, trj_freq, model_devi_merge_traj
@@ -1504,7 +1655,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     fp.write("".join(lmp_lines))
                 with open("job.json", "w") as fp:
                     job = {}
-                    for ii, jj in zip(total_rev_keys, total_rev_item):
+                    for ii, jj in zip_strict(total_rev_keys, total_rev_item):
                         job[ii] = jj
                     json.dump(job, fp, indent=4)
                 os.chdir(cwd_)
@@ -1667,7 +1818,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     # only support for deepmd v2.0
     if Version(mdata["deepmd_version"]) < Version("2.0"):
         raise RuntimeError(
-            "Only support deepmd-kit 2.x for model_devi_engine='gromacs'"
+            "Only support deepmd-kit v2 or above for model_devi_engine='gromacs'"
         )
     model_devi_jobs = jdata["model_devi_jobs"]
     if iter_index >= len(model_devi_jobs):
@@ -1857,7 +2008,7 @@ def _make_model_devi_amber(
 
     # link parm file
     for ii, pp in enumerate(parm7):
-        os.symlink(pp, os.path.join(work_path, "qmmm%d.parm7" % ii))
+        os.symlink(pp, os.path.join(work_path, "qmmm%d.parm7" % ii))  # noqa: UP031
     # TODO: consider writing input in json instead of a given file
     # mdin
     mdin = jdata["mdin"]
@@ -1871,7 +2022,7 @@ def _make_model_devi_amber(
     for ii, pp in enumerate(mdin):
         with (
             open(pp) as f,
-            open(os.path.join(work_path, "init%d.mdin" % ii), "w") as fw,
+            open(os.path.join(work_path, "init%d.mdin" % ii), "w") as fw,  # noqa: UP031
         ):
             mdin_str = f.read()
             # freq, nstlim, qm_region, qm_theory, qm_charge, rcut, graph
@@ -1891,7 +2042,7 @@ def _make_model_devi_amber(
             # graph
             for jj, mm in enumerate(task_model_list):
                 # replace graph
-                mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % jj, mm)
+                mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % jj, mm)  # noqa: UP031
             fw.write(mdin_str)
     # disang - list
     disang = jdata["disang"]
@@ -1947,7 +2098,7 @@ def _make_model_devi_amber(
                     for ii, rr in enumerate(r):
                         if isinstance(rr, Iterable) and not isinstance(rr, str):
                             raise RuntimeError(
-                                "rr should not be iterable! sys: %d rr: %s r: %s"
+                                "rr should not be iterable! sys: %d rr: %s r: %s"  # noqa: UP031
                                 % (sys_idx[sys_counter], str(rr), str(r))
                             )
                         tl = tl.replace("RVAL" + str(ii + 1), str(rr))
@@ -2014,7 +2165,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         else:
             num_digits = np.ceil(np.log10(nbeads + 1)).astype(int)
             backward_files += [
-                f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)
+                f"model_devi{i + 1:0{num_digits}d}.out" for i in range(nbeads)
             ]
             backward_files += [f"log.lammps.{i:d}" for i in range(nbeads)]
         if model_devi_merge_traj:
@@ -2046,7 +2197,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         grp_name = gromacs_settings.get("group_name", "Other")
         trj_freq = cur_job.get("trj_freq", 10)
 
-        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (
+        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (  # noqa: UP031
             model_devi_exec,
             mdp_filename,
             topol_filename,
@@ -2088,11 +2239,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         ]
     elif model_devi_engine == "amber":
         commands = [
-            (
-                "TASK=$(basename $(pwd)) && "
-                "SYS1=${TASK:5:3} && "
-                "SYS=$((10#$SYS1)) && "
-            )
+            ("TASK=$(basename $(pwd)) && SYS1=${TASK:5:3} && SYS=$((10#$SYS1)) && ")
             + model_devi_exec
             + (
                 " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo -ref init.rst7"
@@ -2235,7 +2382,9 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
+        ), (
+            r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
+        )
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
@@ -2258,7 +2407,7 @@ def _read_model_devi_file(
             for ibead in range(num_beads):
                 traj_files = glob.glob(
                     os.path.join(
-                        task_path, "traj", f"*lammpstrj{ibead+1:0{num_digits}d}"
+                        task_path, "traj", f"*lammpstrj{ibead + 1:0{num_digits}d}"
                     )
                 )
                 traj_files_sorted.append(
@@ -2274,7 +2423,9 @@ def _read_model_devi_file(
             assert all(
                 len(traj_list) == len(traj_files_sorted[0])
                 for traj_list in traj_files_sorted
-            ), "Not all beads generated the same number of frames. Check your pimd task carefully."
+            ), (
+                "Not all beads generated the same number of frames. Check your pimd task carefully."
+            )
             for ibead in range(num_beads):
                 for itraj in range(len(traj_files_sorted[0])):
                     base_path, original_filename = os.path.split(
@@ -2283,7 +2434,7 @@ def _read_model_devi_file(
                     frame_number = int(original_filename.split(".")[0])
                     new_filename = os.path.join(
                         base_path,
-                        f"{frame_number + ibead * (int(last_step)+1):d}.lammpstrj",
+                        f"{frame_number + ibead * (int(last_step) + 1):d}.lammpstrj",
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
@@ -2377,12 +2528,12 @@ def _select_by_model_devi_standard(
                     else:
                         if model_devi_engine == "calypso":
                             dlog.info(
-                                "ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed "
+                                "ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed "  # noqa: UP031
                                 % (tt, ii, all_conf[ii][4])
                             )
                         else:
                             raise RuntimeError(
-                                "md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen"
+                                "md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen"  # noqa: UP031
                                 % (tt, ii, all_conf[ii][4])
                             )
                 else:
@@ -2449,7 +2600,6 @@ def _select_by_model_devi_adaptive_trust_low(
     for tt in modd_system_task:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model_devi = np.loadtxt(os.path.join(tt, "model_devi.out"))
             model_devi = _read_model_devi_file(
                 tt, model_devi_f_avg_relative, model_devi_merge_traj
             )
@@ -3052,7 +3202,7 @@ def make_pwmat_input(jdata, filename):
             fp.write("job=scf\n")
             fp_pp_files = jdata["fp_pp_files"]
             for idx, ii in enumerate(fp_pp_files):
-                fp.write("IN.PSP%d = %s\n" % (idx + 1, ii))
+                fp.write("IN.PSP%d = %s\n" % (idx + 1, ii))  # noqa: UP031
             if "OUT.MLMD" in input or "out.mlmd" in input:
                 return input
             else:
@@ -3219,9 +3369,9 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
     fp_pp_path = os.path.abspath(fp_pp_path)
     type_map = jdata["type_map"]
     assert os.path.exists(fp_pp_path)
-    assert len(fp_pp_files) == len(
-        type_map
-    ), "size of fp_pp_files should be the same as the size of type_map"
+    assert len(fp_pp_files) == len(type_map), (
+        "size of fp_pp_files should be the same as the size of type_map"
+    )
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3278,9 +3428,9 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
             model_file = os.path.join(
                 fp_pp_path, os.path.split(fp_dpks_model)[1]
             )  # only the filename
-            assert os.path.isfile(
-                model_file
-            ), f"Can not find the deepks model file {model_file}, which is defined in {ii}/INPUT"
+            assert os.path.isfile(model_file), (
+                f"Can not find the deepks model file {model_file}, which is defined in {ii}/INPUT"
+            )
             os.symlink(model_file, fp_dpks_model)  # link to the model file
 
         # get pp, orb, descriptor filenames from STRU
@@ -3295,9 +3445,9 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         if orb_files_stru:
             assert "fp_orb_files" in jdata, "need to define fp_orb_files in jdata"
         if descriptor_file_stru:
-            assert (
-                "fp_dpks_descriptor" in jdata
-            ), "need to define fp_dpks_descriptor in jdata"
+            assert "fp_dpks_descriptor" in jdata, (
+                "need to define fp_dpks_descriptor in jdata"
+            )
 
         for idx, iatom in enumerate(atom_names):
             type_map_idx = type_map.index(iatom)
@@ -3307,21 +3457,21 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
                 )
             if pp_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
-                assert os.path.isfile(
-                    src_file
-                ), f"Can not find the pseudopotential file {src_file}"
+                assert os.path.isfile(src_file), (
+                    f"Can not find the pseudopotential file {src_file}"
+                )
                 os.symlink(src_file, pp_files_stru[idx])
             if orb_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_orb_files"][type_map_idx])
-                assert os.path.isfile(
-                    src_file
-                ), f"Can not find the orbital file {src_file}"
+                assert os.path.isfile(src_file), (
+                    f"Can not find the orbital file {src_file}"
+                )
                 os.symlink(src_file, orb_files_stru[idx])
         if descriptor_file_stru:
             src_file = os.path.join(fp_pp_path, jdata["fp_dpks_descriptor"])
-            assert os.path.isfile(
-                src_file
-            ), f"Can not find the descriptor file {src_file}"
+            assert os.path.isfile(src_file), (
+                f"Can not find the descriptor file {src_file}"
+            )
             os.symlink(src_file, descriptor_file_stru)
 
         os.chdir(cwd)
@@ -3541,7 +3691,6 @@ def make_fp_abacus_scf(iter_index, jdata):
             fp_pp_files,
             fp_orb_files,
             fp_dpks_descriptor,
-            fp_params,
             type_map=jdata["type_map"],
             pporb=pporb_path,
         )
@@ -3624,11 +3773,25 @@ def make_fp_cp2k(iter_index, jdata):
     else:
         fp_params = jdata["fp_params"]
     cwd = os.getcwd()
+
+    # skip bad box criteria
+    skip_bad_box = jdata.get("fp_skip_bad_box")
+    count_bad_box = 0
+
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System("POSCAR").data
         # make input for every task
         # if fp_params exits, make keys
+        if skip_bad_box is not None:
+            # Check the box directly from POSCAR
+            skip = check_bad_box("POSCAR", skip_bad_box, fmt="vasp/poscar")
+            if skip:
+                count_bad_box += 1
+                os.chdir(cwd)
+                shutil.rmtree(ii)  # Clean up inconsistent task directory
+                continue
+
         if fp_params:
             cp2k_input = make_cp2k_input(sys_data, fp_params)
         else:
@@ -3636,13 +3799,16 @@ def make_fp_cp2k(iter_index, jdata):
             cp2k_input = make_cp2k_input_from_external(sys_data, exinput_path)
         with open("input.inp", "w") as fp:
             fp.write(cp2k_input)
-            fp.close()
         # make coord.xyz used by cp2k for every task
         cp2k_coord = make_cp2k_xyz(sys_data)
         with open("coord.xyz", "w") as fp:
             fp.write(cp2k_coord)
-            fp.close()
         os.chdir(cwd)
+
+    if count_bad_box > 0:
+        dlog.info(
+            f"skipped {count_bad_box:6d} confs with bad box, {len(fp_tasks) - count_bad_box:6d} remains"
+        )
 
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
@@ -3732,7 +3898,7 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
             .replace("%qm_region%", qm_region[ii])
             .replace("%qm_charge%", str(qm_charge[ii]))
         )
-        with open("low_level%d.mdin" % ii, "w") as f:
+        with open("low_level%d.mdin" % ii, "w") as f:  # noqa: UP031
             f.write(mdin_new_str)
 
         mdin_new_str = (
@@ -3740,22 +3906,69 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
             .replace("%qm_region%", qm_region[ii])
             .replace("%qm_charge%", str(qm_charge[ii]))
         )
-        with open("high_level%d.mdin" % ii, "w") as f:
+        with open("high_level%d.mdin" % ii, "w") as f:  # noqa: UP031
             f.write(mdin_new_str)
 
     parm7 = jdata["parm7"]
     parm7_prefix = jdata.get("parm7_prefix", "")
     parm7 = [os.path.join(parm7_prefix, pp) for pp in parm7]
     for ii, pp in enumerate(parm7):
-        os.symlink(pp, "qmmm%d.parm7" % ii)
+        os.symlink(pp, "qmmm%d.parm7" % ii)  # noqa: UP031
 
     rst7_prefix = jdata.get("sys_configs_prefix", "")
     for ii, ss in enumerate(jdata["sys_configs"]):
-        os.symlink(os.path.join(rst7_prefix, ss[0]), "init%d.rst7" % ii)
+        os.symlink(os.path.join(rst7_prefix, ss[0]), "init%d.rst7" % ii)  # noqa: UP031
 
     with open("qm_region", "w") as f:
         f.write("\n".join(qm_region))
     os.chdir(cwd)
+
+
+def make_fp_cpx(iter_index, jdata):
+    """Make input file for Quantum Espresso Car-Parrinello (cp.x) run.
+
+    Convert the POSCAR file to cp.x input file using prepared template.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+    template_fn = fp_params["template_fn"]
+
+    with open(template_fn) as tn:
+        template = tn.read()
+
+    for ii in fp_tasks:
+        itemp = copy.deepcopy(template)
+        with set_directory(Path(ii)):
+            system = dpdata.System("POSCAR", fmt="vasp/poscar")
+            # convert POSCAR to cp.in
+            cell_param = ""
+            for a in system["cells"][0]:
+                for v in a:
+                    cell_param += f"{v:.16e} "
+                cell_param += "\n"
+            itemp = itemp.replace("%CELL%", cell_param)
+
+            pos = ""
+            ntypes = system.get_ntypes()
+            numbs = system.get_atom_numbs()
+            names = system.get_atom_names()
+            coords = system["coords"][0]
+            for t in range(ntypes):
+                ts = sum(numbs[:t])
+                for a in range(numbs[t]):
+                    pos += f"{names[t]:2} {coords[a + ts, 0]:20.16f} {coords[a + ts, 1]:20.16f} {coords[a + ts, 2]:20.16f}\n"
+            itemp = itemp.replace("%POSITIONS%", pos)
+            with open(input_fn + ".in", "w") as fp:
+                fp.write(itemp)
 
 
 def make_fp_custom(iter_index, jdata):
@@ -3829,6 +4042,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         make_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        make_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
     else:
@@ -4136,6 +4351,20 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
             forward_common_files=forward_common_files,
         )
+    elif fp_style == "cpx":
+        extensions = [".cel", ".evp", ".for", ".pos", ".str"]
+        input_fn = jdata["fp_params"]["input_fn"]
+        forward_files = [input_fn + ".in"]
+        backward_files = [input_fn + ext for ext in extensions] + ["output"]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            _qe_check_fin,
+            log_file="output",
+        )
     elif fp_style == "custom":
         fp_params = jdata["fp_params"]
         forward_files = [fp_params["input_fn"]]
@@ -4176,7 +4405,7 @@ def post_fp_check_fail(iter_index, jdata, rfailed=None):
     nfail = ntask - nframe
 
     rfail = float(nfail) / float(ntask)
-    dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.0))
+    dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.0))  # noqa: UP031
     if rfail > ratio_failed:
         raise RuntimeError("find too many unsuccessfully terminated jobs")
 
@@ -4253,7 +4482,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                         # check if ele_temp shape is correct
                         _sys.check_data()
                 if all_sys is None:
-                    all_sys = _sys
+                    all_sys = dpdata.MultiSystems(_sys, type_map=jdata["type_map"])
                 else:
                     all_sys.append(_sys)
             elif len(_sys) >= 2:
@@ -4268,11 +4497,11 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
 
     if tcount == 0:
         rfail = 0.0
-        dlog.info("failed frame: %6d in %6d " % (icount, tcount))
+        dlog.info("failed frame: %6d in %6d " % (icount, tcount))  # noqa: UP031
     else:
         rfail = float(icount) / float(tcount)
         dlog.info(
-            "failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.0)
+            "failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.0)  # noqa: UP031
         )
 
     if rfail > ratio_failed:
@@ -4308,7 +4537,8 @@ def post_fp_pwscf(iter_index, jdata):
         sys_input.sort()
 
         flag = True
-        for ii, oo in zip(sys_input, sys_output):
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
             if flag:
                 _sys = dpdata.LabeledSystem(
                     oo, fmt="qe/pw/scf", type_map=jdata["type_map"]
@@ -4357,10 +4587,12 @@ def post_fp_abacus_scf(iter_index, jdata):
         sys_input.sort()
 
         all_sys = None
-        for ii, oo in zip(sys_input, sys_output):
-            _sys = dpdata.LabeledSystem(
-                oo, fmt="abacus/scf", type_map=jdata["type_map"]
-            )
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
+            _sys = dpdata.LabeledSystem(oo, fmt="abacus/scf")
+            if len(_sys) > 0:
+                _sys.data["atom_types"] = np.asarray(_sys.data["atom_types"], dtype=int)
+                _sys.apply_type_map(jdata["type_map"])
             if len(_sys) > 0:
                 if all_sys is None:
                     all_sys = _sys
@@ -4399,17 +4631,7 @@ def post_fp_siesta(iter_index, jdata):
         sys_output.sort()
         sys_input.sort()
         for idx, oo in enumerate(sys_output):
-            _sys = dpdata.LabeledSystem()
-            (
-                _sys.data["atom_names"],
-                _sys.data["atom_numbs"],
-                _sys.data["atom_types"],
-                _sys.data["cells"],
-                _sys.data["coords"],
-                _sys.data["energies"],
-                _sys.data["forces"],
-                _sys.data["virials"],
-            ) = dpdata.siesta.output.obtain_frame(oo)
+            _sys = dpdata.LabeledSystem(oo, fmt="siesta/output")
             if idx == 0:
                 all_sys = _sys
             else:
@@ -4497,8 +4719,9 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
             _sys = dpdata.LabeledSystem(
                 oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"]
             )
-            all_sys.append(_sys)
-            icount += 1
+            if len(_sys) > 0:
+                all_sys.append(_sys)
+                icount += 1
 
         if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, f"data.{ss}")
@@ -4507,11 +4730,11 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
 
     if tcount == 0:
         rfail = 0.0
-        dlog.info("failed frame: %6d in %6d " % (tcount - icount, tcount))
+        dlog.info("failed frame: %6d in %6d " % (tcount - icount, tcount))  # noqa: UP031
     else:
         rfail = float(tcount - icount) / float(tcount)
         dlog.info(
-            "failed frame: %6d in %6d  %6.2f %% "
+            "failed frame: %6d in %6d  %6.2f %% "  # noqa: UP031
             % (tcount - icount, tcount, rfail * 100.0)
         )
 
@@ -4605,6 +4828,50 @@ def post_fp_amber_diff(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
+def post_fp_cpx(iter_index, jdata):
+    """Post fp for cp.x. Collect data from qe/cp/traj labeled system.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of the current iteration.
+    jdata : dict
+        The parameter data.
+    """
+    model_devi_jobs = jdata["model_devi_jobs"]
+    assert iter_index < len(model_devi_jobs)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0:
+        return
+
+    system_index = []
+    for ii in fp_tasks:
+        system_index.append(os.path.basename(ii).split(".")[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+
+    for ss in system_index:
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
+        sys_output.sort()
+        all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+        for oo in sys_output:
+            if os.path.exists(os.path.join(oo, "output")):
+                sys = dpdata.LabeledSystem(os.path.join(oo, input_fn), fmt="qe/cp/traj")
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
+
+
 def post_fp_custom(iter_index, jdata):
     """Post fp for custom fp. Collect data from user-defined `output_fn`.
 
@@ -4668,6 +4935,8 @@ def post_fp(iter_index, jdata):
         post_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         post_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        post_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         post_fp_custom(iter_index, jdata)
     else:
@@ -4755,7 +5024,7 @@ def run_iter(param_file, machine_file):
                 iter_rec = [int(x) for x in line.split()]
         if len(iter_rec) == 0:
             raise ValueError("There should not be blank lines in record.dpgen.")
-        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
+        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))  # noqa: UP031
 
     cont = True
     ii = -1
@@ -4768,7 +5037,7 @@ def run_iter(param_file, machine_file):
         for jj in range(numb_task):
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1]:
                 continue
-            task_name = "task %02d" % jj
+            task_name = "task %02d" % jj  # noqa: UP031
             sepline(f"{iter_name} {task_name}", "-")
             if jj == 0:
                 log_iter("make_train", ii, jj)
@@ -4801,7 +5070,7 @@ def run_iter(param_file, machine_file):
                 log_iter("post_fp", ii, jj)
                 post_fp(ii, jdata)
             else:
-                raise RuntimeError("unknown task %d, something wrong" % jj)
+                raise RuntimeError("unknown task %d, something wrong" % jj)  # noqa: UP031
             record_iter(record, ii, jj)
 
 

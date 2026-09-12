@@ -10,6 +10,7 @@ import unittest
 import dpdata
 import numpy as np
 
+from dpgen._compat import zip_strict
 from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -37,23 +38,24 @@ from .context import (
 
 
 def _make_fake_models(idx, numb_models):
-    train_dir = os.path.join("iter.%06d" % idx, "00.train")
+    train_dir = os.path.join("iter.%06d" % idx, "00.train")  # noqa: UP031
     os.makedirs(train_dir, exist_ok=True)
     pwd = os.getcwd()
     os.chdir(train_dir)
     for ii in range(numb_models):
-        os.makedirs("%03d" % ii, exist_ok=True)
-        with open(os.path.join("%03d" % ii, "forzen_model.pb"), "w") as fp:
+        os.makedirs("%03d" % ii, exist_ok=True)  # noqa: UP031
+        with open(os.path.join("%03d" % ii, "forzen_model.pb"), "w") as fp:  # noqa: UP031
             fp.write(str(ii))
-        if not os.path.isfile("graph.%03d.pb" % ii):
+        if not os.path.isfile("graph.%03d.pb" % ii):  # noqa: UP031
             os.symlink(
-                os.path.join("%03d" % ii, "forzen_model.pb"), "graph.%03d.pb" % ii
+                os.path.join("%03d" % ii, "forzen_model.pb"),  # noqa: UP031
+                "graph.%03d.pb" % ii,  # noqa: UP031  # noqa: UP031
             )
     os.chdir(pwd)
 
 
 def _check_confs(testCase, idx, jdata):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
@@ -81,18 +83,18 @@ def _check_confs(testCase, idx, jdata):
 
 
 def _check_pb(testCase, idx):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
-    tr_dir = os.path.join("iter.%06d" % idx, "00.train")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
+    tr_dir = os.path.join("iter.%06d" % idx, "00.train")  # noqa: UP031
     md_pb = glob.glob(os.path.join(md_dir, "grapb*pb"))
     tr_pb = glob.glob(os.path.join(tr_dir, "grapb*pb"))
     md_pb.sort()
     tr_pb.sort()
-    for ii, jj in zip(md_pb, tr_pb):
+    for ii, jj in zip_strict(md_pb, tr_pb):
         my_file_cmp(testCase, ii, jj)
 
 
 def _check_traj_dir(testCase, idx):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     for ii in tasks:
@@ -110,7 +112,7 @@ def _get_lammps_pt(lmp_input):
 
 
 def _check_pt(testCase, idx, jdata):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
@@ -132,7 +134,7 @@ def _check_pt(testCase, idx, jdata):
         for ss in ii:
             for tt in temps:
                 for pp in press:
-                    task_dir = os.path.join(md_dir, "task.%03d.%06d" % (sidx, count))
+                    task_dir = os.path.join(md_dir, "task.%03d.%06d" % (sidx, count))  # noqa: UP031
                     lt, lp = _get_lammps_pt(os.path.join(task_dir, "input.lammps"))
                     testCase.assertAlmostEqual(lt, tt)
                     testCase.assertAlmostEqual(lp, pp)
@@ -279,7 +281,7 @@ class TestMakeModelDevi(unittest.TestCase):
         os.makedirs(os.path.join(path, "traj"), exist_ok=True)
         for i in range(4):
             for j in range(0, 5, 2):
-                with open(os.path.join(path, f"traj/{j}.lammpstrj{i+1}"), "a") as fp:
+                with open(os.path.join(path, f"traj/{j}.lammpstrj{i + 1}"), "a") as fp:
                     fp.write(f"{i} {j}\n")
         model_devi_array = np.zeros([3, 7])
         model_devi_array[:, 0] = np.array([0, 2, 4])
@@ -290,7 +292,7 @@ class TestMakeModelDevi(unittest.TestCase):
             model_devi_array[:, 4] = 0.1 * (i + 1) * np.arange(1, 4)
             model_devi_total_array[i * 3 : (i + 1) * 3, 4] = model_devi_array[:, 4]
             np.savetxt(
-                os.path.join(path, f"model_devi{i+1}.out"),
+                os.path.join(path, f"model_devi{i + 1}.out"),
                 model_devi_array,
                 fmt="%.12e",
             )
@@ -362,7 +364,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         # check the first task
-        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")  # noqa: UP031
         tasks = glob.glob(os.path.join(md_dir, "task.*"))
         tasks.sort()
         # each system contains 2 frames
@@ -486,7 +488,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         # check the first task
-        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")  # noqa: UP031
         tasks = glob.glob(os.path.join(md_dir, "task.*"))
         # 4 accounts for 2 systems each with 2 frames
         self.assertEqual(len(tasks), (4))
@@ -648,6 +650,91 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         tmp = " ".join(lines[3].split())
         self.assertEqual(tmp, "ddd")
 
+    def test_revise_lmp_input_model_with_relative_params_v1(self):
+        """Test that revise_lmp_input_model properly handles use_relative and epsilon for DeepMD v1+."""
+        lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
+        ref_lines = copy.deepcopy(lines)
+
+        # Create jdata with relative parameters
+        jdata = {
+            "use_relative": True,
+            "epsilon": 1.5,
+            "use_relative_v": True,
+            "epsilon_v": 2.0,
+        }
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", jdata=jdata
+        )
+
+        # Check that other lines remain unchanged
+        for ii in [0, 2, 3]:
+            self.assertEqual(lines_result[ii], ref_lines[ii])
+
+        # The pair_style line should include relative keywords
+        tmp = " ".join(lines_result[1].split())
+        expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.5 relative_v 2.0"
+        self.assertEqual(tmp, expected)
+
+    def test_revise_lmp_input_model_with_partial_relative_params_v1(self):
+        """Test with only use_relative enabled."""
+        lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
+        ref_lines = copy.deepcopy(lines)
+
+        # Create jdata with only force relative parameters
+        jdata = {"use_relative": True, "epsilon": 1.0}
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", jdata=jdata
+        )
+
+        # Check that other lines remain unchanged
+        for ii in [0, 2, 3]:
+            self.assertEqual(lines_result[ii], ref_lines[ii])
+
+        # The pair_style line should include relative keyword for force only
+        tmp = " ".join(lines_result[1].split())
+        expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.0"
+        self.assertEqual(tmp, expected)
+
+    def test_revise_lmp_input_model_without_relative_params_v1(self):
+        """Test behavior when no relative parameters are provided (should work as before)."""
+        lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
+        ref_lines = copy.deepcopy(lines)
+
+        # No jdata provided
+        lines_result = revise_lmp_input_model(lines, ["model0", "model1"], 10, "1")
+
+        # Check that other lines remain unchanged
+        for ii in [0, 2, 3]:
+            self.assertEqual(lines_result[ii], ref_lines[ii])
+
+        # The pair_style line should be the basic version
+        tmp = " ".join(lines_result[1].split())
+        expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out"
+        self.assertEqual(tmp, expected)
+
+    def test_revise_lmp_input_model_with_relative_and_ele_temp(self):
+        """Test that relative parameters work together with electron temperature."""
+        lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
+        ref_lines = copy.deepcopy(lines)
+
+        # Create jdata with relative parameters
+        jdata = {"use_relative": True, "epsilon": 1.0}
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", use_ele_temp=1, jdata=jdata
+        )
+
+        # Check that other lines remain unchanged
+        for ii in [0, 2, 3]:
+            self.assertEqual(lines_result[ii], ref_lines[ii])
+
+        # The pair_style line should include both relative and electron temperature
+        tmp = " ".join(lines_result[1].split())
+        expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.0 fparam ${ELE_TEMP}"
+        self.assertEqual(tmp, expected)
+
 
 class TestMakeMDAMBER(unittest.TestCase):
     def tearDown(self):
@@ -697,7 +784,10 @@ class TestMakeMDAMBER(unittest.TestCase):
         restart_text = "This is the fake restart file to test `restart_from_iter`"
         with open(
             os.path.join(
-                "iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"
+                "iter.%06d" % 0,  # noqa: UP031
+                "01.model_devi",
+                "task.000.000000",
+                "rc.rst7",
             ),
             "w",
         ) as fw:
@@ -708,13 +798,16 @@ class TestMakeMDAMBER(unittest.TestCase):
         self._check_input(1)
         with open(
             os.path.join(
-                "iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7"
+                "iter.%06d" % 1,  # noqa: UP031
+                "01.model_devi",
+                "task.000.000000",
+                "init.rst7",
             )
         ) as f:
             assert f.read() == restart_text
 
     def _check_input(self, iter_idx: int):
-        md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")  # noqa: UP031
         assert os.path.isfile(os.path.join(md_dir, "init0.mdin"))
         assert os.path.isfile(os.path.join(md_dir, "qmmm0.parm7"))
         tasks = glob.glob(os.path.join(md_dir, "task.*"))

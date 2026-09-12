@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
     # there are many log files in tests
     # TODO: seperate py files and log files
@@ -28,10 +28,15 @@ repos:
 
 # Python
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.7
+    rev: v0.15.2
     hooks:
     - id: ruff
       args: ["--fix"]
+    # Audit only B905 as py310 so the check also runs for our Python 3.9 code.
+    # Runtime code uses zip_strict; this hook must never auto-add strict=.
+    - id: ruff
+      name: ruff (strict zip audit)
+      args: ["--isolated", "--select", "B905", "--target-version", "py310"]
     - id: ruff-format
 # numpydoc
 -   repo: https://github.com/Carreau/velin
@@ -39,5 +44,19 @@ repos:
     hooks:
     - id: velin
       args: ["--write"]
+# markdown
+-   repo: https://github.com/hukkin/mdformat
+    rev: 1.0.0
+    hooks:
+    -   id: mdformat
+        exclude: "^(tests/|examples/init/abacus/).*$"
+        additional_dependencies:
+        # See https://github.com/executablebooks/mdformat-myst/issues/13
+        - "git+https://github.com/njzjz-bothub/mdformat-myst@d9c414e#egg=mdformat-myst"
+        - mdformat-ruff==0.1.3
+        - mdformat-web==0.2.0
+        - mdformat-config==0.2.1
+        - mdformat-beautysh==1.0.0
+        - mdformat-gfm-alerts==2.0.0
 ci:
   autoupdate_branch: devel

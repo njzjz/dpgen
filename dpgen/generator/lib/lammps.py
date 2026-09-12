@@ -49,7 +49,7 @@ def make_lammps_input(
         raise RuntimeError(
             "the frame style ele_temp and atom style ele_temp should not be set at the same time"
         )
-    ret = "variable        NSTEPS          equal %d\n" % nsteps
+    ret = "variable        NSTEPS          equal %d\n" % nsteps  # noqa: UP031
     if nbeads is not None:
         if nbeads <= 0:
             raise ValueError(
@@ -58,11 +58,11 @@ def make_lammps_input(
         power = 1
         while power < nbeads:
             power *= 10
-        ret += "variable        ibead           uloop %d pad\n" % (power - 1)
+        ret += "variable        ibead           uloop %d pad\n" % (power - 1)  # noqa: UP031
     if nbeads is not None:
         ret += "atom_modify        map yes\n"
-    ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
-    ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
+    ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq  # noqa: UP031
+    ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq  # noqa: UP031
     ret += f"variable        TEMP            equal {temp:f}\n"
     if nbeads is not None:
         ret += "variable        TEMP_NBEADS            equal %f\n" % (temp * nbeads)
@@ -82,8 +82,17 @@ def make_lammps_input(
     ret += "atom_style      atomic\n"
     ret += "\n"
     ret += "neighbor        1.0 bin\n"
+
+    # Build neigh_modify command with applicable options
+    neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    neigh_modify_options = []
     if neidelay is not None:
-        ret += "neigh_modify    delay %d\n" % neidelay
+        neigh_modify_options.append(f"delay {neidelay}")
+    if neigh_modify_one is not None:
+        neigh_modify_options.append(f"one {neigh_modify_one}")
+
+    if neigh_modify_options:
+        ret += f"neigh_modify    {' '.join(neigh_modify_options)}\n"
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:
@@ -92,13 +101,27 @@ def make_lammps_input(
         ret += f'if "${{restart}} > 0" then "read_restart dpgen.restart${{ibead}}.*" else "read_data {conf_file}"\n'
     ret += "change_box   all triclinic\n"
     for jj in range(len(mass_map)):
-        ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])
+        ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])  # noqa: UP031
     graph_list = ""
     for ii in graphs:
         graph_list += ii + " "
+
+    # Check if D3 dispersion is configured
+    lmp_d3 = jdata.get("lmp_d3", {})
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+
+    if d3_enabled:
+        # Build D3 parameter string from validated arguments
+        d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+
     if Version(deepmd_version) < Version("1"):
         # 0.x
-        ret += f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
+        if d3_enabled:
+            ret += f"pair_style      hybrid/overlay deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out dispersion/d3 {d3_params}\n"
+        else:
+            ret += (
+                f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
+            )
     else:
         # 1.x
         keywords = ""
@@ -112,11 +135,29 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
-        if nbeads is None:
-            ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
+
+        if d3_enabled:
+            # Use hybrid/overlay with D3
+            if nbeads is None:
+                ret += f"pair_style      hybrid/overlay deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords} dispersion/d3 {d3_params}\n"
+            else:
+                ret += f"pair_style      hybrid/overlay deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords} dispersion/d3 {d3_params}\n"
         else:
-            ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
-    ret += "pair_coeff      * *\n"
+            # Standard deepmd only
+            if nbeads is None:
+                ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
+            else:
+                ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
+
+    # Add pair_coeff lines
+    if d3_enabled:
+        # D3 requires type maps (element symbols)
+        type_map = jdata.get("type_map", [])
+        type_map_str = " ".join(type_map)
+        ret += "pair_coeff      * * deepmd\n"
+        ret += f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+    else:
+        ret += "pair_coeff      * *\n"
     ret += "\n"
     ret += "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret += "thermo          ${THERMO_FREQ}\n"
@@ -141,12 +182,12 @@ def make_lammps_input(
     if pka_e is None:
         if nbeads is None:
             ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'
+                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'  # noqa: UP031
                 % (random.randrange(max_seed - 1) + 1)
             )
         else:
             ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'
+                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'  # noqa: UP031
                 % (random.randrange(max_seed - 1) + 1)
             )
     else:

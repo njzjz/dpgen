@@ -31,9 +31,9 @@ from .context import (
 
 class TestPostFPVasp(unittest.TestCase):
     def setUp(self):
-        assert os.path.isdir(
-            "out_data_post_fp_vasp"
-        ), "out data for post fp vasp should exist"
+        assert os.path.isdir("out_data_post_fp_vasp"), (
+            "out data for post fp vasp should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_vasp", "iter.000000")
@@ -77,7 +77,10 @@ class TestPostFPVasp(unittest.TestCase):
         setup_ele_temp(True)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/", fmt="deepmd/raw")
+        # MultiSystems creates subdirectories based on chemical formula
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.000/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 2)
 
         if sys.data["coords"][0][1][0] < sys.data["coords"][1][1][0]:
@@ -114,8 +117,10 @@ class TestPostFPVasp(unittest.TestCase):
                         ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
                     )
 
-        self.assertTrue(os.path.isfile("iter.000000/02.fp/data.000/set.000/aparam.npy"))
-        aparam = np.load("iter.000000/02.fp/data.000/set.000/aparam.npy")
+        self.assertTrue(
+            os.path.isfile("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
+        )
+        aparam = np.load("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
         natoms = sys.get_natoms()
         self.assertEqual(natoms, 2)
         self.assertEqual(list(list(aparam)[0]), [0, 0])
@@ -128,7 +133,10 @@ class TestPostFPVasp(unittest.TestCase):
         setup_ele_temp(False)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/", fmt="deepmd/raw")
+        # MultiSystems creates subdirectories based on chemical formula
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.001/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 1)
 
         # if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
@@ -165,7 +173,7 @@ class TestPostFPVasp(unittest.TestCase):
                         ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
                     )
 
-        fparam = np.load("iter.000000/02.fp/data.001/set.000/fparam.npy")
+        fparam = np.load("iter.000000/02.fp/data.001/Mg0Al2/set.000/fparam.npy")
         self.assertEqual(fparam.shape[0], 1)
         self.assertEqual(list(fparam), [100000])
 
@@ -183,9 +191,9 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 2
-        assert os.path.isdir(
-            "out_data_post_fp_pwscf"
-        ), "out data for post fp pwscf should exist"
+        assert os.path.isdir("out_data_post_fp_pwscf"), (
+            "out data for post fp pwscf should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_pwscf", "iter.000000")
@@ -204,9 +212,9 @@ class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 2
-        assert os.path.isdir(
-            "out_data_post_fp_abacus"
-        ), "out data for post fp pwscf should exist"
+        assert os.path.isdir("out_data_post_fp_abacus"), (
+            "out data for post fp pwscf should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_abacus", "iter.000000")
@@ -228,9 +236,9 @@ class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_siesta"
-        ), "out data for post fp siesta should exist"
+        assert os.path.isdir("out_data_post_fp_siesta"), (
+            "out data for post fp siesta should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_siesta", "iter.000000")
@@ -249,9 +257,9 @@ class TestPostGaussian(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_gaussian"
-        ), "out data for post fp gaussian should exist"
+        assert os.path.isdir("out_data_post_fp_gaussian"), (
+            "out data for post fp gaussian should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_gaussian", "iter.000000")
@@ -270,9 +278,9 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 5
-        assert os.path.isdir(
-            "out_data_post_fp_cp2k"
-        ), "out data for post fp cp2k should exist"
+        assert os.path.isdir("out_data_post_fp_cp2k"), (
+            "out data for post fp cp2k should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_cp2k", "iter.000000")
@@ -291,9 +299,9 @@ class TestPostFPPWmat(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 2
-        assert os.path.isdir(
-            "out_data_post_fp_pwmat"
-        ), "out data for post fp pwmat should exist"
+        assert os.path.isdir("out_data_post_fp_pwmat"), (
+            "out data for post fp pwmat should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_pwmat", "iter.000000")
@@ -339,9 +347,9 @@ class TestPostFPCustom(unittest.TestCase, CompLabeledSys):
         self.e_places = 5
         self.f_places = 5
         self.v_places = 2
-        assert os.path.isdir(
-            "out_data_post_fp_pwmat"
-        ), "out data for post fp pwmat should exist"
+        assert os.path.isdir("out_data_post_fp_pwmat"), (
+            "out data for post fp pwmat should exist"
+        )
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         with open(param_custom_fp_file) as fp:

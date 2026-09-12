@@ -10,6 +10,8 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
+from dpgen._compat import zip_strict
+
 try:
     # expect openbabel >= 3.1.0
     from openbabel import openbabel
@@ -29,7 +31,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     mol = openbabel.OBMol()
     mol.BeginModify()
     for idx, (num, position) in enumerate(
-        zip(all_atoms.get_atomic_numbers(), all_atoms.positions)
+        zip_strict(all_atoms.get_atomic_numbers(), all_atoms.positions)
     ):
         atom = mol.NewAtom(idx)
         atom.SetAtomicNum(int(num))
@@ -73,7 +75,7 @@ def _crd2mul(symbols, crds):
             "\n".join(
                 [
                     f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}"
-                    for s, (x, y, z) in zip(symbols, crds)
+                    for s, (x, y, z) in zip_strict(symbols, crds)
                 ]
             ),
         )
@@ -154,8 +156,8 @@ def make_gaussian_input(sys_data, fp_params):
             mult_frags.append(detect_multiplicity(np.array(symbols)[idx]))
         if use_fragment_guesses:
             multiplicity = sum(mult_frags) - frag_numb + 1
-            chargekeywords_frag = "%d %d" % (charge, multiplicity) + "".join(
-                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags]
+            chargekeywords_frag = "%d %d" % (charge, multiplicity) + "".join(  # noqa: UP031
+                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags]  # noqa: UP031
             )
         else:
             multi_frags = np.array(mult_frags)
@@ -187,10 +189,10 @@ def make_gaussian_input(sys_data, fp_params):
         (chargekeywords_frag if use_fragment_guesses else chargekeywords),
     ]
 
-    for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
+    for ii, (symbol, coordinate) in enumerate(zip_strict(symbols, coordinates)):
         if use_fragment_guesses:
             buff.append(
-                "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)
+                "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)  # noqa: UP031
             )
         else:
             buff.append("{} {:f} {:f} {:f}".format(symbol, *coordinate))

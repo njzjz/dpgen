@@ -4,6 +4,8 @@ import dpdata
 import numpy as np
 import scipy.constants as pc
 
+from dpgen._compat import zip_strict
+
 
 class NBandsEsti:
     def __init__(self, test_list):
@@ -66,7 +68,7 @@ class NBandsEsti:
     @classmethod
     def _get_default_nbands(self, res):
         ret = 0
-        for ii, jj in zip(res["natoms"], res["nvalence"]):
+        for ii, jj in zip_strict(res["natoms"], res["nvalence"]):
             ret += ii * jj // 2 + ii // 2 + 2
         return ret
 

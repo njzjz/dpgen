@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 
 import dpgen.auto_test.lib.util as util
+from dpgen._compat import zip_strict
 from dpgen.generator.lib.vasp import incar_upper
 
 
@@ -38,7 +39,7 @@ def regulate_poscar(poscar_in, poscar_out):
         if ii not in uniq_name:
             uniq_name.append(ii)
     uniq_count = np.zeros(len(uniq_name), dtype=int)
-    for nn, cc in zip(names, counts):
+    for nn, cc in zip_strict(names, counts):
         uniq_count[uniq_name.index(nn)] += cc
     natoms = np.sum(uniq_count)
     posis = lines[8 : 8 + natoms]
@@ -66,7 +67,7 @@ def sort_poscar(poscar_in, poscar_out, new_names):
     names = lines[5].split()
     counts = [int(ii) for ii in lines[6].split()]
     new_counts = np.zeros(len(counts), dtype=int)
-    for nn, cc in zip(names, counts):
+    for nn, cc in zip_strict(names, counts):
         new_counts[new_names.index(nn)] += cc
     natoms = np.sum(new_counts)
     posis = lines[8 : 8 + natoms]
@@ -124,7 +125,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma):
     rbox = reciprocal_box(box)
     kpoints = [
         max(1, (np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int)))
-        for ii, ks in zip(rbox, kspacing)
+        for ii, ks in zip_strict(rbox, kspacing)
     ]
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret
@@ -269,22 +270,22 @@ def make_vasp_static_incar(
     isif = 2
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
-    ret += "NPAR=%d\n" % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "NPAR=%d\n" % npar  # noqa: UP031
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELMIN=6\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=-1\n"
     ret += "\n"
     ret += "NSW=0\n"
@@ -319,23 +320,23 @@ def make_vasp_relax_incar(
     isif = _compute_isif(relax_ion, relax_shape, relax_volume)
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
-    ret += "NPAR=%d\n" % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "NPAR=%d\n" % npar  # noqa: UP031
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELM=100\n"
     ret += "NELMIN=6\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=2\n"
     ret += "\n"
     ret += "NSW=50\n"
@@ -360,22 +361,22 @@ def make_vasp_phonon_incar(
     isif = 2
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
     # ret += 'NPAR=%d\n' % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELMIN=4\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=8\n"
     ret += "\n"
     ret += "NSW=1\n"
@@ -478,7 +479,7 @@ def _make_vasp_kp_gamma(kpoints):
     ret += "Automatic mesh\n"
     ret += "0\n"
     ret += "Gamma\n"
-    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])
+    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])  # noqa: UP031
     ret += "0  0  0\n"
     return ret
 
@@ -488,7 +489,7 @@ def _make_vasp_kp_mp(kpoints):
     ret += "K-Points\n"
     ret += " 0\n"
     ret += "Monkhorst Pack\n"
-    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])
+    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])  # noqa: UP031
     ret += " 0  0  0\n"
     return ret
 

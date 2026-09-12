@@ -4,9 +4,6 @@ import os
 
 import dpdata
 import numpy as np
-from dpdata.abacus.scf import make_unlabeled_stru
-from dpdata.utils import uniq_atom_names
-from dpdata.vasp import poscar as dpdata_poscar
 
 import dpgen.generator.lib.abacus_scf as abacus_scf
 
@@ -142,11 +139,7 @@ def poscar2stru(poscar, inter_param, stru="STRU"):
                             - deepks_desc:  a string of deepks descriptor file
     - stru:            output filename, usally is 'STRU'.
     """
-    # if use dpdata.System, the structure will be rotated to make cell to be lower triangular
-    with open(poscar) as fp:
-        lines = [line.rstrip("\n") for line in fp]
-    stru_data = dpdata_poscar.to_system_data(lines)
-    stru_data = uniq_atom_names(stru_data)
+    stru_data = dpdata.System(poscar, fmt="vasp/poscar").data
 
     atom_mass = []
     pseudo = None
@@ -161,40 +154,39 @@ def poscar2stru(poscar, inter_param, stru="STRU"):
     else:
         atom_mass_dict = inter_param["atom_masses"]
     for atom in stru_data["atom_names"]:
-        assert (
-            atom in atom_mass_dict
-        ), f"the mass of {atom} is not defined in interaction:atom_masses"
+        assert atom in atom_mass_dict, (
+            f"the mass of {atom} is not defined in interaction:atom_masses"
+        )
         atom_mass.append(atom_mass_dict[atom])
 
     if "potcars" in inter_param:
         pseudo = []
         for atom in stru_data["atom_names"]:
-            assert (
-                atom in inter_param["potcars"]
-            ), f"the pseudopotential of {atom} is not defined in interaction:potcars"
+            assert atom in inter_param["potcars"], (
+                f"the pseudopotential of {atom} is not defined in interaction:potcars"
+            )
             pseudo.append("./pp_orb/" + inter_param["potcars"][atom].split("/")[-1])
 
     if "orb_files" in inter_param:
         orb = []
         for atom in stru_data["atom_names"]:
-            assert (
-                atom in inter_param["orb_files"]
-            ), f"orbital file of {atom} is not defined in interaction:orb_files"
+            assert atom in inter_param["orb_files"], (
+                f"orbital file of {atom} is not defined in interaction:orb_files"
+            )
             orb.append("./pp_orb/" + inter_param["orb_files"][atom].split("/")[-1])
 
     if "deepks_desc" in inter_param:
         deepks_desc = "./pp_orb/{}\n".format(inter_param["deepks_desc"])
 
-    stru_string = make_unlabeled_stru(
-        data=stru_data,
+    dpdata.System(data=stru_data).to(
+        "abacus/stru",
+        stru,
         frame_idx=0,
         pp_file=pseudo,
         numerical_orbital=orb,
         numerical_descriptor=deepks_desc,
         mass=atom_mass,
     )
-    with open(stru, "w") as fp:
-        fp.write(stru_string)
 
 
 def stru_fix_atom(struf, fix_atom=[True, True, True]):
@@ -333,7 +325,7 @@ def final_stru(abacus_path):
             if lines[-i][1:27] == "STEP OF MOLECULAR DYNAMICS":
                 max_step = int(lines[-i].split()[-1])
                 break
-        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)
+        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)  # noqa: UP031
     elif calculation == "scf":
         return "STRU"
     else:

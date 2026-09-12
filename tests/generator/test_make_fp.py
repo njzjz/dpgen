@@ -9,6 +9,8 @@ import unittest
 import dpdata
 import numpy as np
 
+from dpgen._compat import zip_strict
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 import scipy.constants as pc
@@ -25,6 +27,7 @@ from .context import (
     param_amber_file,
     param_cp2k_file,
     param_cp2k_file_exinput,
+    param_cpx_file,
     param_custom_fp_file,
     param_diy_abacus_post_file,
     param_diy_file,
@@ -103,6 +106,46 @@ ntyp=3,\n\
 &electrons\n\
 conv_thr=1e-08,\n\
 /\n"
+
+cpx_input_ref = "&CONTROL\n\
+  calculation='cp',\n\
+  restart_mode='from_scratch'\n\
+  outdir='.',\n\
+  prefix='C5H5N',\n\
+  pseudo_dir='dpgen/tests/generator',\n\
+  nstep=1,\n\
+  iprint=1,\n\
+  isave=2,\n\
+  dt=5.0,\n\
+  ndw=50,\n\
+  tprnfor=.true.\n\
+  tstress=.true.\n\
+  etot_conv_thr=1.d-9\n\
+  ekin_conv_thr=1.d-7\n\
+/\n\
+&SYSTEM\n\
+  ibrav=0,\n\
+  nat=176,\n\
+  ntyp=3,\n\
+  ecutwfc=60,\n\
+  ecutrho=360,\n\
+  nr1b=20, nr2b=20, nr3b=20,\n\
+/\n\
+&ELECTRONS\n\
+  electron_dynamics='damp',\n\
+  electron_damping=0.1,\n\
+  emass=300,\n\
+  orthogonalization='ortho',\n\
+  ortho_eps=1d-11,\n\
+  ortho_max=1000\n\
+/\n\
+&IONS\n\
+  ion_dynamics='none'\n\
+/\n\
+ATOMIC_SPECIES\n\
+  C 12.0d0 C_HSCV_PBE-1.0.UPF\n\
+  H 1.00782503223d0 H_HSCV_PBE-1.0.UPF\n\
+  N 14.00307400443d0 N_HSCV_PBE-1.0.UPF\n\n"
 
 siesta_input_ref = "\
 SystemName        system\n\
@@ -236,7 +279,7 @@ def _write_lammps_dump(sys, dump_file, f_idx=0):
         fp.write("ITEM: ATOMS id type x y z\n")
         for ii in range(natoms):
             fp.write(
-                "%d %d %f %f %f\n"
+                "%d %d %f %f %f\n"  # noqa: UP031
                 % (ii + 1, atype[ii] + 1, coord[ii][0], coord[ii][1], coord[ii][2])
             )
 
@@ -263,12 +306,15 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
             sys.data["coords"] = coords
             sys.data["cells"] = cells
             task_dir = os.path.join(
-                "iter.%06d" % idx, "01.model_devi", "task.%03d.%06d" % (sidx, midx)
+                "iter.%06d" % idx,  # noqa: UP031
+                "01.model_devi",
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031
             )
             os.makedirs(os.path.join(task_dir, "traj"), exist_ok=True)
             for ii in range(nframes):
                 _write_lammps_dump(
-                    sys, os.path.join(task_dir, "traj", "%d.lammpstrj" % ii)
+                    sys,
+                    os.path.join(task_dir, "traj", "%d.lammpstrj" % ii),  # noqa: UP031
                 )
             md_out = np.zeros([nframes, 7])
             md_out[:, 0] = np.arange(nframes)
@@ -301,7 +347,9 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp=No
             sys.data["coords"] = coords
             sys.data["cells"] = cells
             task_dir = os.path.join(
-                "iter.%06d" % idx, "01.model_devi", "task.%03d.%06d" % (sidx, midx)
+                "iter.%06d" % idx,  # noqa: UP031
+                "01.model_devi",
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031
             )
             cwd = os.getcwd()
             os.makedirs(task_dir, exist_ok=True)
@@ -327,11 +375,11 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp=No
 
 
 def _check_poscars(testCase, idx, fp_task_max, type_map):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip_strict(sys_idx, candi_files):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -341,10 +389,12 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
         md_task = md_task[:fp_task_max]
         f_idx = f_idx[:fp_task_max]
         cc = 0
-        for tt, ff in zip(md_task, f_idx):
-            traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))
+        for tt, ff in zip_strict(md_task, f_idx):
+            traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
             poscar_file = os.path.join(
-                fp_path, "task.%03d.%06d" % (int(sidx), cc), "POSCAR"
+                fp_path,
+                "task.%03d.%06d" % (int(sidx), cc),  # noqa: UP031
+                "POSCAR",  # noqa: UP031
             )
             cc += 1
             sys0 = dpdata.System(traj_file, fmt="lammps/dump", type_map=type_map)
@@ -353,11 +403,11 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
 
 
 def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip_strict(sys_idx, candi_files):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -370,10 +420,12 @@ def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
         label_0 = 0
         label_1 = 0
 
-        for tt, ff in zip(md_task, f_idx):
+        for tt, ff in zip_strict(md_task, f_idx):
             traj_file = os.path.join(tt, "all.lammpstrj")
             poscar_file = os.path.join(
-                fp_path, "task.%03d.%06d" % (int(sidx), cc), "POSCAR"
+                fp_path,
+                "task.%03d.%06d" % (int(sidx), cc),  # noqa: UP031
+                "POSCAR",  # noqa: UP031
             )
             cc += 1
             sys0 = dpdata.System(traj_file, fmt="lammps/dump", type_map=type_map)
@@ -390,14 +442,14 @@ def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
 
 
 def _check_kpoints_exists(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         testCase.assertTrue(os.path.isfile(os.path.join(ii, "KPOINTS")))
 
 
 def _check_kpoints(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         kpoints = Kpoints.from_file(os.path.join(os.path.join(ii, "KPOINTS")))
@@ -422,7 +474,7 @@ def _check_kpoints(testCase, idx):
 
 
 def _check_incar_exists(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     # testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
@@ -431,7 +483,7 @@ def _check_incar_exists(testCase, idx):
 
 def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files):
     nfile = len(fp_pp_files)
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     for ii in range(nfile):
         testCase.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
@@ -454,11 +506,11 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
             sys_lim = lim
         return sys_lim
 
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip_strict(sys_idx, candi_files):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -469,7 +521,7 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
         f_idx = f_idx[:fp_task_max]
         flo = _trust_limitation_check(int(sidx), flo)
         fhi = _trust_limitation_check(int(sidx), fhi)
-        for tt, ff in zip(md_task, f_idx):
+        for tt, ff in zip_strict(md_task, f_idx):
             md_value = np.loadtxt(os.path.join(tt, "model_devi.out"))
             fvalue = md_value[int(ff)][4]
             testCase.assertTrue(fvalue >= flo)
@@ -477,7 +529,7 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
 
 
 def _check_incar(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     cwd = os.getcwd()
     for ii in tasks:
@@ -489,7 +541,7 @@ def _check_incar(testCase, idx):
 
 
 def _check_incar_ele_temp(testCase, idx, ele_temp):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     cwd = os.getcwd()
     for ii in tasks:
@@ -525,7 +577,7 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
 
 
 def _check_pwscf_input_head(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "input")
@@ -539,8 +591,23 @@ def _check_pwscf_input_head(testCase, idx):
         testCase.assertEqual(("\n".join(lines)).strip(), pwscf_input_ref.strip())
 
 
+def _check_cpx_input_head(testCase, idx):
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
+    tasks = glob.glob(os.path.join(fp_path, "task.*"))
+    for ii in tasks:
+        ifile = os.path.join(ii, "C5H5N.in")
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split("\n")
+        for jj, line in enumerate(lines):
+            if "ATOMIC_POSITIONS" in line:
+                break
+        lines = lines[:jj]
+        testCase.assertEqual(("\n".join(lines)).strip(), cpx_input_ref.strip())
+
+
 def _check_abacus_input(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "INPUT")
@@ -551,7 +618,7 @@ def _check_abacus_input(testCase, idx):
 
 
 def _check_abacus_kpt(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "KPT")
@@ -562,7 +629,7 @@ def _check_abacus_kpt(testCase, idx):
 
 
 def _check_siesta_input_head(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "input")
@@ -577,7 +644,7 @@ def _check_siesta_input_head(testCase, idx):
 
 
 def _check_gaussian_input_head(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "input")
@@ -592,7 +659,7 @@ def _check_gaussian_input_head(testCase, idx):
 
 
 def _check_cp2k_input_head(testCase, idx, ref_out):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     for ii in tasks:
         ifile = os.path.join(ii, "input.inp")
@@ -609,7 +676,7 @@ def _check_cp2k_input_head(testCase, idx, ref_out):
 
 
 def _check_pwmat_input(testCase, idx):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     cwd = os.getcwd()
     for ii in tasks:
@@ -622,7 +689,7 @@ def _check_pwmat_input(testCase, idx):
 
 
 def _check_symlink_user_forward_files(testCase, idx, file):
-    fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
     cwd = os.getcwd()
     for ii in tasks:
@@ -699,10 +766,44 @@ class TestMakeFPPwscf(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
 
+class TestMakeFPcpx(unittest.TestCase):
+    def test_make_fp_cpx(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_cpx_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(
+            self,
+            0,
+            jdata["fp_task_max"],
+            jdata["model_devi_f_trust_lo"],
+            jdata["model_devi_f_trust_hi"],
+        )
+        _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
+        _check_cpx_input_head(self, 0)
+        shutil.rmtree("iter.000000")
+
+
 class TestMakeFPABACUS(unittest.TestCase):
     def _check_pp(self, idx, fp_pp_path, fp_pp_files):
         nfile = len(fp_pp_files)
-        fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+        fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
         for ii in range(nfile):
             self.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
         tasks = glob.glob(os.path.join(fp_path, "task.*"))
@@ -783,7 +884,7 @@ class TestMakeFPABACUS(unittest.TestCase):
             elif "kspacing" in iline:
                 input_ref[ii] = "kspacing 0.040000 0.050000 0.060000"
 
-        fp_path = os.path.join("iter.%06d" % 0, "02.fp", "INPUT")
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp", "INPUT")  # noqa: UP031
         tasks = glob.glob(os.path.join(fp_path, "task.*"))
         for ii in tasks:
             ifile = os.path.join(ii, "INPUT")
@@ -840,7 +941,9 @@ class TestMakeFPAMBERDiff(unittest.TestCase):
             jdata = json.load(fp)
         jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
         task_dir = os.path.join(
-            "iter.%06d" % 0, "01.model_devi", "task.%03d.%06d" % (0, 0)
+            "iter.%06d" % 0,  # noqa: UP031
+            "01.model_devi",
+            "task.%03d.%06d" % (0, 0),  # noqa: UP031
         )
         os.makedirs(task_dir, exist_ok=True)
         with open(os.path.join(task_dir, "rc.mdout"), "w") as f:
@@ -1353,11 +1456,11 @@ class TestMakeFPCustom(unittest.TestCase):
         fp_task_max = jdata["fp_task_max"]
         type_map = jdata["type_map"]
 
-        fp_path = os.path.join("iter.%06d" % 0, "02.fp")
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp")  # noqa: UP031
         candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
         candi_files.sort()
         sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-        for sidx, ii in zip(sys_idx, candi_files):
+        for sidx, ii in zip_strict(sys_idx, candi_files):
             md_task = []
             f_idx = []
             with open(ii) as fp:
@@ -1366,10 +1469,12 @@ class TestMakeFPCustom(unittest.TestCase):
                     f_idx.append(line.split()[1])
             md_task = md_task[:fp_task_max]
             f_idx = f_idx[:fp_task_max]
-            for cc, (tt, ff) in enumerate(zip(md_task, f_idx)):
-                traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))
+            for cc, (tt, ff) in enumerate(zip_strict(md_task, f_idx)):
+                traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
                 input_file = os.path.join(
-                    fp_path, "task.%03d.%06d" % (int(sidx), cc), input_fn
+                    fp_path,
+                    "task.%03d.%06d" % (int(sidx), cc),  # noqa: UP031
+                    input_fn,  # noqa: UP031
                 )
                 system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
                 system2 = dpdata.System(input_file, input_fmt, type_map=type_map)
